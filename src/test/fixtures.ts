@@ -5,7 +5,7 @@ export const testUser: UserResponse = {
   email: 'ayse@example.com',
   firstName: 'Ayşe',
   lastName: 'Yılmaz',
-  phone: null,
+  phone: '05321234567',
   role: 'USER',
 };
 

@@ -31,10 +31,11 @@ export function personNameSchema(label: string) {
     .max(NAME_MAX_LENGTH, `${label} en fazla ${NAME_MAX_LENGTH} karakter olabilir`);
 }
 
-export const optionalPhoneSchema = z
+// Buyers reach sellers by phone, so the backend requires it at sign-up and in the profile
+export const phoneSchema = z
   .string()
   .transform((value) => value.replace(PHONE_FORMATTING_CHARACTERS, ''))
+  .refine((value) => value !== '', { message: 'Telefon numarası zorunludur' })
   .refine((value) => value === '' || PHONE_PATTERN.test(value), {
     message: 'Telefon numarası 10-15 haneli olmalıdır (örn. 05321234567)',
-  })
-  .transform((value) => (value === '' ? undefined : value));
+  });

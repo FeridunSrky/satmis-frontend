@@ -20,6 +20,8 @@ export interface AuthResponse {
 export interface ErrorResponse {
   timestamp: string;
   status: number;
+  /** Only present when the frontend must react specially, e.g. `PHONE_REQUIRED`. */
+  code?: string;
   message: string;
   path: string;
   errors?: Record<string, string>;
@@ -30,7 +32,7 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
-  phone?: string;
+  phone: string;
 }
 
 export interface LoginRequest {
@@ -49,7 +51,7 @@ export interface LogoutRequest {
 export interface UpdateProfileRequest {
   firstName: string;
   lastName: string;
-  phone?: string;
+  phone: string;
 }
 
 export interface ChangePasswordRequest {

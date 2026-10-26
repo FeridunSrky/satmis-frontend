@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { newPasswordSchema, optionalPhoneSchema, personNameSchema } from '@/shared/lib/validation';
+import { newPasswordSchema, phoneSchema, personNameSchema } from '@/shared/lib/validation';
 
 export const profileSchema = z.object({
   firstName: personNameSchema('Ad'),
   lastName: personNameSchema('Soyad'),
-  phone: optionalPhoneSchema,
+  phone: phoneSchema,
 });
 
 export const changePasswordSchema = z

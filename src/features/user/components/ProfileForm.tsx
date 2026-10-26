@@ -70,11 +70,12 @@ export function ProfileForm({ user }: ProfileFormProps) {
         hint="E-posta adresi şu an değiştirilemiyor."
       />
       <TextField
-        label="Telefon (isteğe bağlı)"
+        label="Telefon"
         type="tel"
         autoComplete="tel"
         inputMode="tel"
         placeholder="0532 123 45 67"
+        hint="Giriş yapmış alıcılar ilanlarında bu numarayı görür."
         error={errors.phone?.message}
         {...register('phone')}
       />

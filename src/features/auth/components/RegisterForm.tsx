@@ -68,12 +68,12 @@ export function RegisterForm() {
         {...register('email')}
       />
       <TextField
-        label="Telefon (isteğe bağlı)"
+        label="Telefon"
         type="tel"
         autoComplete="tel"
         inputMode="tel"
         placeholder="0532 123 45 67"
-        hint="İlanlarında alıcıların sana ulaşması için."
+        hint="Alıcılar ilanların için seni bu numaradan arar."
         error={errors.phone?.message}
         {...register('phone')}
       />

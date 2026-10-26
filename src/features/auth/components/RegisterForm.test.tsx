@@ -8,12 +8,12 @@ import { currentPath, renderApp, signOutCompletely } from '@/test/renderApp';
 import { apiUrl, server } from '@/test/server';
 import { useAuthStore } from '../authStore';
 
-async function fillRegisterForm({ phone = '' }: { phone?: string } = {}) {
+async function fillRegisterForm({ phone = '0532 123 45 67' }: { phone?: string } = {}) {
   const user = userEvent.setup();
   await user.type(await screen.findByLabelText('Ad'), 'Ayşe');
   await user.type(screen.getByLabelText('Soyad'), 'Yılmaz');
   await user.type(screen.getByLabelText('E-posta'), 'ayse@example.com');
-  if (phone) await user.type(screen.getByLabelText('Telefon (isteğe bağlı)'), phone);
+  if (phone) await user.type(screen.getByLabelText('Telefon'), phone);
   await user.type(screen.getByLabelText('Şifre'), 'GizliSifre123');
   await user.click(screen.getByRole('button', { name: 'Hesap oluştur' }));
 }
@@ -76,19 +76,20 @@ describe('RegisterForm', () => {
     expect(useAuthStore.getState().status).toBe('authenticated');
   });
 
-  it('submit_emptyPhone_omitsPhoneFromRequest', async () => {
-    let sentBody: Record<string, unknown> = {};
+  it('submit_emptyPhone_showsRequiredErrorWithoutRequest', async () => {
+    let requestCount = 0;
     server.use(
-      mockHttp.post(apiUrl('/auth/register'), async ({ request }) => {
-        sentBody = (await request.json()) as Record<string, unknown>;
+      mockHttp.post(apiUrl('/auth/register'), () => {
+        requestCount += 1;
         return HttpResponse.json(buildAuthResponse(1), { status: 201 });
       }),
     );
     renderApp('/kayit');
 
-    await fillRegisterForm();
+    await fillRegisterForm({ phone: '' });
 
-    await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'));
-    expect(sentBody).not.toHaveProperty('phone');
+    expect(await screen.findByText('Telefon numarası zorunludur')).toBeInTheDocument();
+    expect(screen.getByLabelText('Telefon')).toHaveAttribute('aria-invalid', 'true');
+    expect(requestCount).toBe(0);
   });
 });

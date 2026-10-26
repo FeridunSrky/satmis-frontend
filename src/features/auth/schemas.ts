@@ -2,7 +2,7 @@ import { z } from 'zod';
 import {
   emailSchema,
   newPasswordSchema,
-  optionalPhoneSchema,
+  phoneSchema,
   personNameSchema,
   requiredPasswordSchema,
 } from '@/shared/lib/validation';
@@ -16,7 +16,7 @@ export const registerSchema = z.object({
   firstName: personNameSchema('Ad'),
   lastName: personNameSchema('Soyad'),
   email: emailSchema,
-  phone: optionalPhoneSchema,
+  phone: phoneSchema,
   password: newPasswordSchema,
 });
 
