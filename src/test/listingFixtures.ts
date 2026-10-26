@@ -4,7 +4,7 @@ import type { PageResponse } from '@/shared/api/types';
 import { testUser } from './fixtures';
 import { apiUrl, server } from './server';
 
-export const OTHER_SELLER = { id: 99, firstName: 'Mehmet', lastName: 'Kaya' };
+export const OTHER_SELLER = { id: 99, firstName: 'Mehmet', lastName: 'Kaya', phone: '05559876543' };
 
 export function buildListingSummary(overrides: Partial<ListingSummary> = {}): ListingSummary {
   return {
@@ -74,7 +74,12 @@ export function buildListingDetail(overrides: Partial<ListingDetail> = {}): List
 }
 
 export const ownListingOverrides = {
-  seller: { id: testUser.id, firstName: testUser.firstName, lastName: testUser.lastName },
+  seller: {
+    id: testUser.id,
+    firstName: testUser.firstName,
+    lastName: testUser.lastName,
+    phone: testUser.phone,
+  },
 };
 
 export function buildPage<TItem>(content: TItem[], totalPages = 1): PageResponse<TItem> {

@@ -1,7 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
-import { toApiError } from '@/shared/api/apiError';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { PHONE_REQUIRED_CODE, toApiError } from '@/shared/api/apiError';
 import { Button } from '@/shared/components/Button';
 import { FormAlert } from '@/shared/components/FormAlert';
 import { applyServerErrors } from '@/shared/lib/formServerErrors';
@@ -31,6 +33,7 @@ export function ListingForm({
   onReloadLatest,
 }: ListingFormProps) {
   const [hasVersionConflict, setHasVersionConflict] = useState(false);
+  const navigate = useNavigate();
   const form = useForm({ resolver: zodResolver(listingFormSchema), defaultValues });
   const {
     handleSubmit,
@@ -46,6 +49,12 @@ export function ListingForm({
       const apiError = toApiError(error);
       if (apiError.kind === 'http' && apiError.status === HTTP_CONFLICT && onReloadLatest) {
         setHasVersionConflict(true);
+        return;
+      }
+      // Only accounts created before phones became mandatory can hit this
+      if (apiError.kind === 'http' && apiError.code === PHONE_REQUIRED_CODE) {
+        toast.error(apiError.message);
+        navigate('/profil');
         return;
       }
       // 400 lands on fields; 403, 404 and 422 carry a message meant for the whole form

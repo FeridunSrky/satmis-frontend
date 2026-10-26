@@ -2,7 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { http as mockHttp, HttpResponse } from 'msw/http';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { buildErrorResponse } from '@/test/fixtures';
+import { buildErrorResponse, testUser } from '@/test/fixtures';
 import { buildListingDetail, mockCatalog, ownListingOverrides } from '@/test/listingFixtures';
 import { currentPath, renderApp, signInAs } from '@/test/renderApp';
 import { apiUrl, server } from '@/test/server';
@@ -133,6 +133,39 @@ describe('CreateListingPage', () => {
     await user.click(screen.getByRole('button', { name: 'İlanı yayınla' }));
 
     expect(await screen.findByText('Seçilen seri bu modele ait değil')).toBeInTheDocument();
+  });
+});
+
+describe('CreateListingPage without a phone', () => {
+  beforeEach(() => {
+    signInAs(1);
+    mockCatalog();
+  });
+
+  it('phoneRequired_sendsUserToProfileWithMessage', async () => {
+    server.use(
+      mockHttp.post(apiUrl('/listings'), () =>
+        HttpResponse.json(
+          {
+            ...buildErrorResponse(422, 'İlan vermek için profilinize telefon numarası ekleyin'),
+            code: 'PHONE_REQUIRED',
+          },
+          { status: 422 },
+        ),
+      ),
+      mockHttp.get(apiUrl('/users/me'), () => HttpResponse.json({ ...testUser, phone: null })),
+    );
+    const { router } = renderApp('/ilan-ver');
+    const user = userEvent.setup();
+    await screen.findByRole('heading', { name: 'İlan ver' });
+
+    await fillValidListing(user);
+    await user.click(screen.getByRole('button', { name: 'İlanı yayınla' }));
+
+    await waitFor(() => expect(currentPath(router)).toBe('/profil'));
+    expect(
+      await screen.findByText('İlan vermek için profilinize telefon numarası ekleyin'),
+    ).toBeInTheDocument();
   });
 });
 

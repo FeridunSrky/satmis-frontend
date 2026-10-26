@@ -23,6 +23,14 @@ export function formatKilometer(kilometer: number): string {
   return `${integerFormatter.format(kilometer)} km`;
 }
 
+const TURKISH_MOBILE = /^(?:\+90|0)?(5\d{2})(\d{3})(\d{2})(\d{2})$/;
+
+/** "05321234567" or "+905321234567" → "0532 123 45 67"; other numbers are shown as stored. */
+export function formatPhone(phone: string): string {
+  const match = TURKISH_MOBILE.exec(phone);
+  return match ? `0${match.slice(1).join(' ')}` : phone;
+}
+
 /** Backend timestamps are UTC ISO strings; Intl renders them in the viewer's local time. */
 export function formatDate(isoTimestamp: string): string {
   return dateFormatter.format(new Date(isoTimestamp));

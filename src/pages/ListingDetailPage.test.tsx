@@ -3,9 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { delay } from 'msw';
 import { http as mockHttp, HttpResponse } from 'msw/http';
 import { describe, expect, it } from 'vitest';
+import { STALE_TIME_MS } from '@/app/queryClient';
 import type { ListingDetail } from '@/features/listings/types';
-import { buildErrorResponse } from '@/test/fixtures';
-import { buildListingDetail, ownListingOverrides } from '@/test/listingFixtures';
+import { buildAuthResponse, buildErrorResponse, testUser } from '@/test/fixtures';
+import { buildListingDetail, OTHER_SELLER, ownListingOverrides } from '@/test/listingFixtures';
 import { currentPath, renderApp, signInAs, signOutCompletely } from '@/test/renderApp';
 import { apiUrl, server } from '@/test/server';
 
@@ -201,5 +202,57 @@ describe('FavoriteButton on the detail page', () => {
     const restoredButton = await screen.findByRole('button', { name: /Favorilere ekle/ });
     expect(restoredButton).toHaveAttribute('aria-pressed', 'false');
     expect(await screen.findByText('Favori güncellenemedi: İlan bulunamadı')).toBeInTheDocument();
+  });
+});
+
+describe('Seller phone on the detail page', () => {
+  it('signedIn_seesCallableFormattedNumber', async () => {
+    signInAs(1);
+    mockDetail(buildListingDetail());
+    renderApp('/ilan/7');
+
+    const phoneLink = await screen.findByRole('link', { name: '0555 987 65 43' });
+    expect(phoneLink).toHaveAttribute('href', 'tel:05559876543');
+  });
+
+  it('anonymous_seesSignInLinkInsteadOfNumber', async () => {
+    signOutCompletely();
+    mockDetail(buildListingDetail({ seller: { ...OTHER_SELLER, phone: null } }));
+    renderApp('/ilan/7');
+
+    const signInLink = await screen.findByRole('link', {
+      name: 'Numarayı görmek için giriş yapın',
+    });
+    expect(signInLink).toHaveAttribute('href', '/giris?next=%2Filan%2F7');
+    expect(screen.queryByRole('link', { name: /0555/ })).not.toBeInTheDocument();
+  });
+
+  it('signingInFromListing_returnsAndShowsNumber', async () => {
+    signOutCompletely();
+    server.use(
+      // Like the backend: the number is only sent with a valid access token
+      mockHttp.get(apiUrl('/listings/7'), ({ request }) => {
+        const isSignedIn = request.headers.has('Authorization');
+        return HttpResponse.json(
+          buildListingDetail({
+            seller: { ...OTHER_SELLER, phone: isSignedIn ? OTHER_SELLER.phone : null },
+          }),
+        );
+      }),
+      mockHttp.post(apiUrl('/auth/login'), () => HttpResponse.json(buildAuthResponse(1))),
+      mockHttp.get(apiUrl('/users/me'), () => HttpResponse.json(testUser)),
+    );
+    const { router, queryClient } = renderApp('/ilan/7');
+    // Use the app's real cache lifetime so the anonymous copy would still count as fresh
+    queryClient.setDefaultOptions({ queries: { retry: false, staleTime: STALE_TIME_MS } });
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('link', { name: 'Numarayı görmek için giriş yapın' }));
+    await user.type(await screen.findByLabelText('E-posta'), testUser.email);
+    await user.type(screen.getByLabelText('Şifre'), 'GizliSifre123');
+    await user.click(screen.getByRole('button', { name: 'Giriş yap' }));
+
+    await waitFor(() => expect(currentPath(router)).toBe('/ilan/7'));
+    expect(await screen.findByRole('link', { name: '0555 987 65 43' })).toBeInTheDocument();
   });
 });

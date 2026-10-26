@@ -4,6 +4,7 @@ import { FavoriteButton } from '@/features/favorites/components/FavoriteButton';
 import { formatDate, formatNumber, formatPrice } from '@/shared/lib/format';
 import type { ListingDetail } from '../types';
 import { OwnerActions } from './OwnerActions';
+import { SellerPhone } from './SellerPhone';
 import { StatusBadge } from './StatusBadge';
 
 export function ListingSidePanel({ listing }: { listing: ListingDetail }) {
@@ -36,6 +37,12 @@ export function ListingSidePanel({ listing }: { listing: ListingDetail }) {
           <dt className="text-muted">Satıcı</dt>
           <dd className="font-semibold">
             {listing.seller.firstName} {listing.seller.lastName}
+          </dd>
+        </div>
+        <div className="col-span-2">
+          <dt className="text-muted">Telefon</dt>
+          <dd>
+            <SellerPhone listingId={listing.id} phone={listing.seller.phone} />
           </dd>
         </div>
       </dl>

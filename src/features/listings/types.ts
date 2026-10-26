@@ -72,7 +72,8 @@ export interface ListingDetail {
   favoritedByMe: boolean;
   createdAt: string;
   updatedAt: string;
-  seller: { id: number; firstName: string; lastName: string };
+  /** `phone` is only sent to signed-in viewers; anonymous requests get `null`. */
+  seller: { id: number; firstName: string; lastName: string; phone: string | null };
   location: { cityId: number; cityName: string; districtId: number; districtName: string };
   vehicle: ListingVehicle;
   images: ListingImage[];
