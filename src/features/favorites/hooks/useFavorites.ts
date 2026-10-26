@@ -20,7 +20,7 @@ interface ToggleFavoriteVariables {
   favorite: boolean;
 }
 
-/** Flips the heart on the detail page immediately and rolls back if the request fails. */
+/** Flips the favorite on the detail page immediately and rolls back if the request fails. */
 export function useToggleFavorite() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -47,7 +47,12 @@ export function useToggleFavorite() {
     },
     onSettled: (_result, _error, { listingId }) =>
       Promise.all([
-        queryClient.invalidateQueries({ queryKey: listingKeys.detail(listingId) }),
+        // Every GET of a listing counts as a view on the backend, so the open detail page
+        // keeps the optimistic count instead of refetching; it is fresh on the next visit
+        queryClient.invalidateQueries({
+          queryKey: listingKeys.detail(listingId),
+          refetchType: 'none',
+        }),
         queryClient.invalidateQueries({ queryKey: favoriteKeys.all }),
       ]),
   });

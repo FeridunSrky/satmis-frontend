@@ -152,6 +152,39 @@ describe('FavoriteButton on the detail page', () => {
     await waitFor(() => expect(isFavorited).toBe(true));
   });
 
+  it('addThenRemove_updatesCountWithoutRefetchingDetail', async () => {
+    signInAs(1);
+    let detailRequests = 0;
+    let favoriteRequests = 0;
+    server.use(
+      mockHttp.get(apiUrl('/listings/7'), () => {
+        detailRequests += 1;
+        return HttpResponse.json(buildListingDetail());
+      }),
+      mockHttp.put(apiUrl('/listings/7/favorite'), () => {
+        favoriteRequests += 1;
+        return new HttpResponse(null, { status: 204 });
+      }),
+      mockHttp.delete(apiUrl('/listings/7/favorite'), () => {
+        favoriteRequests += 1;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    renderApp('/ilan/7');
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole('button', { name: /Favorilere ekle/ }));
+    await waitFor(() => expect(favoriteRequests).toBe(1));
+    expect(screen.getByRole('button', { name: /Favorilerimde/ })).toHaveTextContent('4');
+
+    await user.click(screen.getByRole('button', { name: /Favorilerimde/ }));
+    await waitFor(() => expect(favoriteRequests).toBe(2));
+    expect(screen.getByRole('button', { name: /Favorilere ekle/ })).toHaveTextContent('3');
+
+    // The backend counts a view on every detail GET; favoriting must not add any
+    expect(detailRequests).toBe(1);
+  });
+
   it('signedInClick_requestFails_rollsBack', async () => {
     signInAs(1);
     mockDetail(buildListingDetail());
