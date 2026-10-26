@@ -14,6 +14,13 @@ export const routes: RouteObject[] = [
         lazy: () => import('@/pages/HomePage').then((module) => ({ Component: module.HomePage })),
       },
       {
+        path: 'ilan/:id',
+        lazy: () =>
+          import('@/pages/ListingDetailPage').then((module) => ({
+            Component: module.ListingDetailPage,
+          })),
+      },
+      {
         path: 'ilanlar',
         lazy: () =>
           import('@/pages/ListingsPage').then((module) => ({ Component: module.ListingsPage })),
@@ -36,6 +43,34 @@ export const routes: RouteObject[] = [
       {
         element: <ProtectedRoute />,
         children: [
+          {
+            path: 'ilan-ver',
+            lazy: () =>
+              import('@/pages/CreateListingPage').then((module) => ({
+                Component: module.CreateListingPage,
+              })),
+          },
+          {
+            path: 'ilan/:id/duzenle',
+            lazy: () =>
+              import('@/pages/EditListingPage').then((module) => ({
+                Component: module.EditListingPage,
+              })),
+          },
+          {
+            path: 'ilanlarim',
+            lazy: () =>
+              import('@/pages/MyListingsPage').then((module) => ({
+                Component: module.MyListingsPage,
+              })),
+          },
+          {
+            path: 'favorilerim',
+            lazy: () =>
+              import('@/pages/FavoritesPage').then((module) => ({
+                Component: module.FavoritesPage,
+              })),
+          },
           {
             path: 'profil',
             lazy: () =>

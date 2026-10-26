@@ -23,12 +23,17 @@ export function Header() {
         </Link>
         <nav aria-label="Ana menü" className="hidden md:block">
           <NavLink to="/ilanlar" className={navLinkClassName}>
-            Satılık Araçlar
+            İlanlar
           </NavLink>
         </nav>
 
         <div className="ml-auto hidden items-center gap-2 md:flex">
-          {status === 'authenticated' && user && <UserMenu user={user} />}
+          {status === 'authenticated' && user && (
+            <>
+              <ButtonLink to="/ilan-ver">İlan ver</ButtonLink>
+              <UserMenu user={user} />
+            </>
+          )}
           {status === 'anonymous' && (
             <>
               <ButtonLink to="/giris" variant="ghost">

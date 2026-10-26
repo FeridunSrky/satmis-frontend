@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLogout } from '@/features/auth/hooks/useAuthMutations';
 import type { UserResponse } from '@/shared/api/types';
 import { getInitials } from '@/shared/lib/getInitials';
+import { USER_MENU_LINKS } from './userMenuLinks';
 
 interface UserMenuProps {
   user: UserResponse;
@@ -71,9 +72,16 @@ export function UserMenu({ user }: UserMenuProps) {
           id={menuId}
           className="absolute right-0 mt-2 w-52 rounded-lg border border-line bg-paper p-1.5 shadow-lg"
         >
-          <Link to="/profil" className={menuItemClassName} onClick={() => setIsOpen(false)}>
-            Profilim
-          </Link>
+          {USER_MENU_LINKS.map((menuLink) => (
+            <Link
+              key={menuLink.to}
+              to={menuLink.to}
+              className={menuItemClassName}
+              onClick={() => setIsOpen(false)}
+            >
+              {menuLink.label}
+            </Link>
+          ))}
           <button type="button" className={menuItemClassName} onClick={handleLogout}>
             Çıkış yap
           </button>

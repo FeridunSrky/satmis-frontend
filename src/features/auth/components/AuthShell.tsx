@@ -11,7 +11,7 @@ interface AuthShellProps {
 
 const ACCOUNT_BENEFITS = [
   'Beğendiğin ilanları favorilerine ekle',
-  'Aracını ilana koy, kontrol edildikten sonra yayına girsin',
+  'Aracını dakikalar içinde ilana koy, satınca tek tıkla işaretle',
   'İletişim bilgilerini tek yerden güncel tut',
 ];
 

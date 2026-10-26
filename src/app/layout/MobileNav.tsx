@@ -3,6 +3,7 @@ import { useAuthStore } from '@/features/auth/authStore';
 import { useLogout } from '@/features/auth/hooks/useAuthMutations';
 import { Button, ButtonLink } from '@/shared/components/Button';
 import { navLinkClassName } from './navLinkClassName';
+import { USER_MENU_LINKS } from './userMenuLinks';
 
 interface MobileNavProps {
   id: string;
@@ -30,14 +31,25 @@ export function MobileNav({ id, onNavigate }: MobileNavProps) {
     >
       <div className="flex flex-col gap-1">
         <NavLink to="/ilanlar" className={navLinkClassName} onClick={onNavigate}>
-          Satılık Araçlar
+          İlanlar
         </NavLink>
-        {status === 'authenticated' && (
-          <NavLink to="/profil" className={navLinkClassName} onClick={onNavigate}>
-            Profilim
-          </NavLink>
-        )}
+        {status === 'authenticated' &&
+          USER_MENU_LINKS.map((menuLink) => (
+            <NavLink
+              key={menuLink.to}
+              to={menuLink.to}
+              className={navLinkClassName}
+              onClick={onNavigate}
+            >
+              {menuLink.label}
+            </NavLink>
+          ))}
       </div>
+      {status === 'authenticated' && (
+        <ButtonLink to="/ilan-ver" fullWidth className="mt-3" onClick={onNavigate}>
+          İlan ver
+        </ButtonLink>
+      )}
       {status === 'authenticated' && user && (
         <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-4">
           <span className="truncate text-sm text-muted">{user.email}</span>

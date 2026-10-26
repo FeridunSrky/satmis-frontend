@@ -11,12 +11,12 @@ const LISTING_STEPS = [
     text: 'Marka, model, kilometre ve fotoğrafları gir. Fiyatı TL, dolar ya da euro olarak belirle.',
   },
   {
-    title: 'Ekibimiz kontrol etsin',
-    text: 'Her ilan yayına girmeden önce bilgilerin tutarlılığı açısından incelenir.',
+    title: 'Hemen yayına girsin',
+    text: 'Kaydettiğin anda ilanın aramalarda görünür; marka, konum ve fiyatla bulunur.',
   },
   {
-    title: 'Alıcılar seni bulsun',
-    text: 'Onaylanan ilan aramalarda görünür. Satıldığında tek tıkla yayından kaldırırsın.',
+    title: 'Satınca işaretle',
+    text: 'İstediğin zaman yayından kaldır ya da tek tıkla “Satıldı” olarak işaretle.',
   },
 ];
 
@@ -40,8 +40,8 @@ export function HomePage() {
                 Satılık araçları gör
               </ButtonLink>
               {isAuthenticated ? (
-                <ButtonLink to="/profil" size="lg" variant="onDark">
-                  Profilime git
+                <ButtonLink to="/ilan-ver" size="lg" variant="onDark">
+                  İlan ver
                 </ButtonLink>
               ) : (
                 <ButtonLink to="/kayit" size="lg" variant="onDark">
