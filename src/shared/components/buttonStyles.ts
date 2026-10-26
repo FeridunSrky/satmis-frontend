@@ -1,6 +1,6 @@
 import { cn } from '@/shared/lib/cn';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'onDark';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'onDark' | 'danger';
 type ButtonSize = 'md' | 'lg';
 
 export interface ButtonStyleOptions {
@@ -14,6 +14,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   secondary: 'border border-line bg-paper text-ink hover:border-ink/40',
   ghost: 'text-ink hover:bg-ink/5',
   onDark: 'border border-white/30 text-white hover:border-white hover:bg-white/5',
+  danger: 'bg-danger text-white hover:bg-danger/90',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {

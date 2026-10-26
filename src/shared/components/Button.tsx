@@ -1,9 +1,10 @@
-import type { ButtonHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes, Ref } from 'react';
 import { Link, type LinkProps } from 'react-router-dom';
 import { cn } from '@/shared/lib/cn';
 import { buttonClassName, type ButtonStyleOptions } from './buttonStyles';
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & ButtonStyleOptions;
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
+  ButtonStyleOptions & { ref?: Ref<HTMLButtonElement> };
 
 export function Button({
   variant,

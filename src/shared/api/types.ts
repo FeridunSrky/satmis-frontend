@@ -56,3 +56,17 @@ export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
 }
+
+/** Fixed paging contract shared by every list endpoint; `page` is zero-based. */
+export interface PageResponse<TItem> {
+  content: TItem[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+export interface CatalogItem {
+  id: number;
+  name: string;
+}

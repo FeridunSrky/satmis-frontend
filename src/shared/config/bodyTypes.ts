@@ -1,3 +1,5 @@
+import type { BodyType } from '@/shared/api/enums';
+
 // Matches the backend BodyType enum; slugs are the Turkish URL values used in ?kasa=
 export const BODY_TYPES = [
   { value: 'SEDAN', slug: 'sedan', label: 'Sedan', description: 'Dört kapı, ayrı bagaj' },
@@ -18,10 +20,21 @@ export const BODY_TYPES = [
   { value: 'CABRIO', slug: 'cabrio', label: 'Cabrio', description: 'Açılır tavan' },
   { value: 'PICKUP', slug: 'pickup', label: 'Pick-up', description: 'Yük kasası, zorlu yol' },
   { value: 'MPV', slug: 'mpv', label: 'MPV', description: 'Yedi koltuğa kadar' },
-] as const;
+] as const satisfies ReadonlyArray<{
+  value: BodyType;
+  slug: string;
+  label: string;
+  description: string;
+}>;
 
-export type BodyType = (typeof BODY_TYPES)[number];
+export type BodyTypeOption = (typeof BODY_TYPES)[number];
 
-export function findBodyTypeBySlug(slug: string | null): BodyType | undefined {
+export function findBodyTypeBySlug(slug: string | null): BodyTypeOption | undefined {
   return BODY_TYPES.find((bodyType) => bodyType.slug === slug);
+}
+
+export function findBodyTypeByValue(
+  value: BodyType | null | undefined,
+): BodyTypeOption | undefined {
+  return BODY_TYPES.find((bodyType) => bodyType.value === value);
 }
