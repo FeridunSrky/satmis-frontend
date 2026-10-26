@@ -2,7 +2,7 @@ import { QueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 
 const MAX_QUERY_RETRIES = 2;
-const STALE_TIME_MS = 30_000;
+export const STALE_TIME_MS = 30_000;
 
 // 4xx answers will not change on retry; only network failures and 5xx are worth repeating
 function shouldRetry(failureCount: number, error: unknown): boolean {
