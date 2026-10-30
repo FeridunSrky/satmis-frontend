@@ -28,11 +28,13 @@ Built with React 19, TypeScript (strict) and TanStack Query against a Spring Boo
 
 ## Engineering highlights
 
-**Session handling with refresh-token rotation.** The access token is kept in memory only. The
-backend rotates the refresh token on every use and treats reuse of an old one as theft, so a naive
-"refresh on 401" would log users out when two requests or two tabs refresh at once. Refreshes are
-therefore single-flight within a tab and serialized across tabs with the Web Locks API; the token is
-re-read after the lock is acquired.
+**Session handling with refresh-token rotation.** The refresh token lives in an httpOnly cookie
+that JavaScript never sees, so an XSS bug cannot steal it; the access token is kept in memory only
+and restored with a silent refresh on page load. The backend rotates the refresh token on every use
+and treats reuse of an old one as theft, so a naive "refresh on 401" would log users out when two
+requests or two tabs refresh at once. Refreshes are therefore single-flight within a tab and
+serialized across tabs with the Web Locks API, and a `REFRESH_TOKEN_ROTATED` answer is retried
+exactly once. Logging out in one tab ends the session in the others through a `BroadcastChannel`.
 
 **The URL as the source of truth for search.** Filters are parsed from the URL with Zod. Invalid
 values are dropped without breaking the rest of the query, and the parsed filters are mapped to the API's
@@ -72,10 +74,11 @@ and support for reduced motion.
 
 ## Testing
 
-103 tests exercise the app through the UI like a user would, against MSW-mocked endpoints, rather
+108 tests exercise the app through the UI like a user would, against MSW-mocked endpoints, rather
 than testing implementation details. They cover:
 
-- token refresh races, multi-tab logout and session restore
+- token refresh races, multi-tab logout and session restore, including the rotated-token retry
+- no token ever written to web storage, and leftovers from older versions removed on startup
 - login, register and password-change flows, including backend validation errors
 - email verification (one request even under StrictMode) and password reset, including dead links
 - rate limiting: a `429` on token refresh keeps the session, and `Retry-After` disables the form
@@ -131,6 +134,5 @@ src/
 
 - Image upload (listings currently take `https://` image URLs)
 - Keyword search in listings
-- Refresh token in an HttpOnly cookie instead of `localStorage`
 - SMS verification of phone numbers
 - Admin moderation of new listings
