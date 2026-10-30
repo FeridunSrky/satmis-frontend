@@ -8,7 +8,8 @@ import { routes } from '@/app/routes';
 import { useAuthStore } from '@/features/auth/authStore';
 import { installAuth } from '@/features/auth/installAuth';
 import { REFRESH_TOKEN_STORAGE_KEY } from '@/features/auth/tokenStorage';
-import { buildAuthResponse } from './fixtures';
+import type { UserResponse } from '@/shared/api/types';
+import { buildAuthResponse, testUser } from './fixtures';
 
 interface RenderAppOptions {
   strictMode?: boolean;
@@ -36,8 +37,8 @@ export function currentPath(router: ReturnType<typeof createMemoryRouter>): stri
   return router.state.location.pathname + router.state.location.search;
 }
 
-export function signInAs(generation = 1): void {
-  useAuthStore.getState().setSession(buildAuthResponse(generation));
+export function signInAs(generation = 1, user: UserResponse = testUser): void {
+  useAuthStore.getState().setSession(buildAuthResponse(generation, user));
 }
 
 export function signOutCompletely(): void {

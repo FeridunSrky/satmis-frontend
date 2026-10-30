@@ -9,8 +9,7 @@ import { readRefreshToken } from './tokenStorage';
  */
 export async function endSession(queryClient: QueryClient): Promise<void> {
   const refreshToken = readRefreshToken();
-  useAuthStore.getState().clearSession();
-  queryClient.clear();
+  clearLocalSession(queryClient);
   if (!refreshToken) {
     return;
   }
@@ -19,4 +18,10 @@ export async function endSession(queryClient: QueryClient): Promise<void> {
   } catch {
     console.warn('Logout request failed; the local session was cleared anyway.');
   }
+}
+
+/** Forgets tokens and cached user data without telling the backend, e.g. after it revoked them. */
+export function clearLocalSession(queryClient: QueryClient): void {
+  useAuthStore.getState().clearSession();
+  queryClient.clear();
 }

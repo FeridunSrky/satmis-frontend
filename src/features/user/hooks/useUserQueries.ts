@@ -4,18 +4,30 @@ import { changePassword, getCurrentUser, updateCurrentUser } from '../api/userAp
 
 export const currentUserQueryKey = ['users', 'me'] as const;
 
+async function fetchCurrentUser() {
+  const user = await getCurrentUser();
+  useAuthStore.getState().setUser(user);
+  return user;
+}
+
 export function useCurrentUser() {
-  const setUser = useAuthStore((state) => state.setUser);
   const isAuthenticated = useAuthStore((state) => state.status === 'authenticated');
   return useQuery({
     queryKey: currentUserQueryKey,
-    queryFn: async () => {
-      const user = await getCurrentUser();
-      setUser(user);
-      return user;
-    },
+    queryFn: fetchCurrentUser,
     enabled: isAuthenticated,
   });
+}
+
+/** Refetches the user even when no page observes the query, e.g. after e-mail verification. */
+export function useReloadCurrentUser() {
+  const queryClient = useQueryClient();
+  return () =>
+    queryClient.fetchQuery({
+      queryKey: currentUserQueryKey,
+      queryFn: fetchCurrentUser,
+      staleTime: 0,
+    });
 }
 
 export function useUpdateProfile() {

@@ -169,6 +169,49 @@ describe('CreateListingPage without a phone', () => {
   });
 });
 
+describe('CreateListingPage with an unverified e-mail', () => {
+  beforeEach(() => {
+    signInAs(1);
+    mockCatalog();
+  });
+
+  it('emailNotVerified_showsVerificationPromptAboveFormAndStays', async () => {
+    let resendCalls = 0;
+    server.use(
+      mockHttp.post(apiUrl('/listings'), () =>
+        HttpResponse.json(
+          {
+            ...buildErrorResponse(422, 'İlan vermek için e-posta adresinizi doğrulayın'),
+            code: 'EMAIL_NOT_VERIFIED',
+          },
+          { status: 422 },
+        ),
+      ),
+      mockHttp.post(apiUrl('/users/me/email-verification'), () => {
+        resendCalls += 1;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const { router } = renderApp('/ilan-ver');
+    const user = userEvent.setup();
+    await screen.findByRole('heading', { name: 'İlan ver' });
+
+    await fillValidListing(user);
+    await user.click(screen.getByRole('button', { name: 'İlanı yayınla' }));
+
+    expect(
+      await screen.findByText(/İlan vermek için e-posta adresini doğrula/),
+    ).toBeInTheDocument();
+    expect(currentPath(router)).toBe('/ilan-ver');
+    expect(screen.getByLabelText('Başlık')).toHaveValue('Hatasız 2019 Clio');
+
+    await user.click(screen.getByRole('button', { name: 'Tekrar gönder' }));
+
+    expect(await screen.findByText('Yeni doğrulama linki gönderildi')).toBeInTheDocument();
+    expect(resendCalls).toBe(1);
+  });
+});
+
 describe('EditListingPage', () => {
   beforeEach(() => {
     signInAs(1);

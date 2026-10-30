@@ -97,6 +97,25 @@ describe('LoginForm', () => {
     expect(useAuthStore.getState().status).toBe('anonymous');
   });
 
+  it('submit_rateLimited_showsBackendMessageAndDisablesSubmit', async () => {
+    const message = 'Çok fazla deneme yaptınız, lütfen 60 saniye sonra tekrar deneyin';
+    server.use(
+      mockHttp.post(apiUrl('/auth/login'), () =>
+        HttpResponse.json(buildErrorResponse(429, message), {
+          status: 429,
+          headers: { 'Retry-After': '60' },
+        }),
+      ),
+    );
+    renderApp('/giris');
+
+    await fillAndSubmit(testUser.email, VALID_PASSWORD);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(message);
+    expect(screen.getByRole('button', { name: 'Giriş yap' })).toBeDisabled();
+    expect(useAuthStore.getState().status).toBe('anonymous');
+  });
+
   it('submit_serverUnreachable_showsNetworkMessage', async () => {
     server.use(mockHttp.post(apiUrl('/auth/login'), () => HttpResponse.error()));
     renderApp('/giris');

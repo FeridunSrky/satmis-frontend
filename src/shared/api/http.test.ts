@@ -15,13 +15,25 @@ interface BackendCounters {
 }
 
 // Simulates the backend: only the rotated access token is accepted, and each refresh token works once
-function mockBackend({ refreshSucceeds = true, meAlwaysUnauthorized = false } = {}) {
+const RATE_LIMIT_MESSAGE = 'Çok fazla deneme yaptınız, lütfen 60 saniye sonra tekrar deneyin';
+
+function mockBackend({
+  refreshSucceeds = true,
+  refreshRateLimited = false,
+  meAlwaysUnauthorized = false,
+} = {}) {
   const counters: BackendCounters = { refreshCalls: 0, refreshTokensUsed: [], meCalls: 0 };
   server.use(
     mockHttp.post(apiUrl('/auth/refresh'), async ({ request }) => {
       const { refreshToken } = (await request.json()) as { refreshToken: string };
       counters.refreshCalls += 1;
       counters.refreshTokensUsed.push(refreshToken);
+      if (refreshRateLimited) {
+        return HttpResponse.json(buildErrorResponse(429, RATE_LIMIT_MESSAGE), {
+          status: 429,
+          headers: { 'Retry-After': '60' },
+        });
+      }
       if (!refreshSucceeds) {
         return HttpResponse.json(buildErrorResponse(401, 'Oturum geçersiz'), { status: 401 });
       }
@@ -100,6 +112,20 @@ describe('http client session handling', () => {
     });
     expect(readRefreshToken()).toBeNull();
     expect(navigate).toHaveBeenCalledWith('/giris?next=%2Fprofil');
+  });
+
+  it('refreshRateLimited_keepsSessionAndPassesThe429ToTheCaller', async () => {
+    mockBackend({ refreshRateLimited: true });
+
+    await expect(getCurrentUser()).rejects.toMatchObject({ response: { status: 429 } });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      status: 'authenticated',
+      accessToken: 'access-1',
+      user: testUser,
+    });
+    expect(readRefreshToken()).toBe('refresh-1');
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('refreshUnderLock_otherTabRotatedToken_usesLatestStoredToken', async () => {
