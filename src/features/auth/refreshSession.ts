@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { HTTP_TOO_MANY_REQUESTS } from '@/shared/api/apiError';
 import { refresh } from './api/authApi';
 import { useAuthStore } from './authStore';
 import { readRefreshToken } from './tokenStorage';
@@ -50,7 +51,11 @@ async function rotateTokens(): Promise<void> {
   }
 }
 
-// A network failure says nothing about the token, so it is kept for the next attempt
+// A network failure or a rate limit says nothing about the token, so it is kept for the next attempt
 function isRejectedByServer(error: unknown): boolean {
-  return axios.isAxiosError(error) && error.response !== undefined;
+  return (
+    axios.isAxiosError(error) &&
+    error.response !== undefined &&
+    error.response.status !== HTTP_TOO_MANY_REQUESTS
+  );
 }

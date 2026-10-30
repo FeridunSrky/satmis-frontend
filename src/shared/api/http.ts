@@ -1,4 +1,5 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
+import { hasStatus, HTTP_TOO_MANY_REQUESTS } from './apiError';
 
 const API_BASE_URL = '/api';
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -45,6 +46,10 @@ http.interceptors.response.use(undefined, async (error: unknown) => {
   try {
     await authHandlers.refreshSession();
   } catch (refreshError) {
+    // A throttled refresh says nothing about the session; the caller shows the 429 message
+    if (hasStatus(refreshError, HTTP_TOO_MANY_REQUESTS)) {
+      throw refreshError;
+    }
     authHandlers.onSessionExpired(refreshError);
     throw error;
   }
