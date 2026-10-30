@@ -7,6 +7,8 @@ export interface UserResponse {
   lastName: string;
   phone: string | null;
   role: Role;
+  /** Unverified users can sign in and browse but cannot create listings. */
+  emailVerified: boolean;
 }
 
 export interface AuthResponse {
@@ -20,7 +22,7 @@ export interface AuthResponse {
 export interface ErrorResponse {
   timestamp: string;
   status: number;
-  /** Only present when the frontend must react specially, e.g. `PHONE_REQUIRED`. */
+  /** Only present when the frontend must react specially; see `ApiErrorCode`. */
   code?: string;
   message: string;
   path: string;
@@ -52,6 +54,19 @@ export interface UpdateProfileRequest {
   firstName: string;
   lastName: string;
   phone: string;
+}
+
+export interface VerifyEmailRequest {
+  token: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
 }
 
 export interface ChangePasswordRequest {

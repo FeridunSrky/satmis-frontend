@@ -7,7 +7,10 @@ export const testUser: UserResponse = {
   lastName: 'Yılmaz',
   phone: '05321234567',
   role: 'USER',
+  emailVerified: true,
 };
+
+export const unverifiedUser: UserResponse = { ...testUser, emailVerified: false };
 
 export function buildAuthResponse(generation: number, user = testUser): AuthResponse {
   return {
