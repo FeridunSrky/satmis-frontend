@@ -12,7 +12,8 @@ Built with React 19, TypeScript (strict) and TanStack Query against a Spring Boo
   fuel, gearbox, body type, seller type and damage record, then sort and page through the results.
   Every filter lives in the URL with readable Turkish parameters (`/ilanlar?marka=13&kasa=suv&sayfa=2`),
   so searches can be bookmarked and shared, and the back button works as expected.
-- **Listing detail**: image gallery, full vehicle specs, seller, view and favorite counts.
+- **Listing detail**: image gallery, full vehicle specs, seller, view and favorite counts. The
+  seller's phone number is shown to signed-in users only.
 - **Publishing**: a multi-section form with cascading catalog selects, image ordering (the first
   image is the cover) and validation that mirrors the backend rules.
 - **Owner tools**: edit, unpublish, republish, mark as sold or delete. Only the status transitions
@@ -20,6 +21,10 @@ Built with React 19, TypeScript (strict) and TanStack Query against a Spring Boo
 - **Favorites**: one-click add/remove with instant feedback, plus a favorites page.
 - **Accounts**: register, sign in, profile and password management. Sessions survive reloads and
   stay in sync across browser tabs.
+- **Email verification**: new accounts confirm their address through an e-mailed link before they
+  can publish listings; unverified users see a banner with a resend button.
+- **Password reset**: "forgot password" sends a one-time link, and the confirmation never reveals
+  whether an address is registered.
 
 ## Engineering highlights
 
@@ -67,11 +72,13 @@ and support for reduced motion.
 
 ## Testing
 
-71 tests exercise the app through the UI like a user would, against MSW-mocked endpoints, rather
+103 tests exercise the app through the UI like a user would, against MSW-mocked endpoints, rather
 than testing implementation details. They cover:
 
 - token refresh races, multi-tab logout and session restore
 - login, register and password-change flows, including backend validation errors
+- email verification (one request even under StrictMode) and password reset, including dead links
+- rate limiting: a `429` on token refresh keeps the session, and `Retry-After` disables the form
 - URL ↔ API filter mapping, cascading selects and empty/error states
 - listing creation and editing, including `400`, `422` and `409` responses
 - owner-only actions and allowed status transitions
@@ -122,6 +129,8 @@ src/
 
 ## Roadmap
 
-- Seller contact details on the listing page (phone shown to signed-in users)
 - Image upload (listings currently take `https://` image URLs)
-- Email and SMS verification at sign-up
+- Keyword search in listings
+- Refresh token in an HttpOnly cookie instead of `localStorage`
+- SMS verification of phone numbers
+- Admin moderation of new listings
