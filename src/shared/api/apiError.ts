@@ -32,12 +32,14 @@ export type ApiError =
     };
 
 /** Error codes the frontend reacts to; the backend omits `code` for every other error. */
-export type ApiErrorCode = 'PHONE_REQUIRED' | 'EMAIL_NOT_VERIFIED';
+export type ApiErrorCode = 'PHONE_REQUIRED' | 'EMAIL_NOT_VERIFIED' | 'REFRESH_TOKEN_ROTATED';
 
 /** Listing creation is refused because the user's profile has no phone number. */
 export const PHONE_REQUIRED_CODE: ApiErrorCode = 'PHONE_REQUIRED';
 /** Listing creation is refused until the user verifies their e-mail address. */
 export const EMAIL_NOT_VERIFIED_CODE: ApiErrorCode = 'EMAIL_NOT_VERIFIED';
+/** A 401 on refresh because another tab rotated the cookie moments ago; the session is still valid. */
+export const REFRESH_TOKEN_ROTATED_CODE: ApiErrorCode = 'REFRESH_TOKEN_ROTATED';
 
 export function toApiError(error: unknown): ApiError {
   if (!axios.isAxiosError(error) || !error.response) {

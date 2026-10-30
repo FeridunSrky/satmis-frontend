@@ -1,28 +1,40 @@
-import { screen, waitFor } from '@testing-library/react';
-import { http as mockHttp, HttpResponse } from 'msw/http';
+import { screen } from '@testing-library/react';
+import { delay, http as mockHttp, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
-import { buildAuthResponse } from '@/test/fixtures';
-import { renderApp } from '@/test/renderApp';
+import { buildAuthResponse, testUser } from '@/test/fixtures';
+import { currentPath, renderApp } from '@/test/renderApp';
 import { apiUrl, server } from '@/test/server';
 import { useAuthStore } from './authStore';
-import { REFRESH_TOKEN_STORAGE_KEY } from './tokenStorage';
+import { LEGACY_REFRESH_TOKEN_STORAGE_KEY } from './tokenStorage';
 
 // Kept in its own file: bootstrapSession is memoised per module instance by design
-describe('bootstrapSession', () => {
-  it('appStart_inStrictMode_callsRefreshExactlyOnce', async () => {
-    let refreshCalls = 0;
+describe('bootstrapSession with a refresh cookie', () => {
+  it('appStart_inStrictMode_refreshesOnceWithoutBodyAndWaitsBeforeGuarding', async () => {
+    const refreshBodies: string[] = [];
     server.use(
-      mockHttp.post(apiUrl('/auth/refresh'), () => {
-        refreshCalls += 1;
+      mockHttp.post(apiUrl('/auth/refresh'), async ({ request }) => {
+        refreshBodies.push(await request.text());
+        await delay(50);
         return HttpResponse.json(buildAuthResponse(2));
       }),
+      mockHttp.get(apiUrl('/users/me'), () => HttpResponse.json(testUser)),
     );
-    window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, 'refresh-1');
+    // Left behind by a version that stored the refresh token in web storage
+    window.localStorage.setItem(LEGACY_REFRESH_TOKEN_STORAGE_KEY, 'old-local-token');
+    window.sessionStorage.setItem(LEGACY_REFRESH_TOKEN_STORAGE_KEY, 'old-session-token');
 
-    renderApp('/', { strictMode: true });
+    const { router } = renderApp('/profil', { strictMode: true });
 
-    expect(await screen.findByRole('button', { name: /Ayşe Yılmaz/ })).toBeInTheDocument();
-    await waitFor(() => expect(useAuthStore.getState().status).toBe('authenticated'));
-    expect(refreshCalls).toBe(1);
+    expect(await screen.findByText('Yükleniyor...')).toBeInTheDocument();
+    expect(currentPath(router)).toBe('/profil');
+    expect(await screen.findByRole('heading', { name: 'Ayşe Yılmaz' })).toBeInTheDocument();
+    expect(currentPath(router)).toBe('/profil');
+    expect(useAuthStore.getState()).toMatchObject({
+      status: 'authenticated',
+      accessToken: 'access-2',
+    });
+    expect(refreshBodies).toEqual(['']);
+    expect(window.localStorage.getItem(LEGACY_REFRESH_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(window.sessionStorage.getItem(LEGACY_REFRESH_TOKEN_STORAGE_KEY)).toBeNull();
   });
 });

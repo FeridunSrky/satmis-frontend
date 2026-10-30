@@ -26,8 +26,15 @@ export function registerAuthHandlers(handlers: AuthHandlers): void {
 /** For protected endpoints: attaches the access token and refreshes once on 401. */
 export const http = axios.create({ baseURL: API_BASE_URL, timeout: REQUEST_TIMEOUT_MS });
 
-/** For /auth endpoints: no interceptors, so refresh can never recurse into itself. */
-export const authHttp = axios.create({ baseURL: API_BASE_URL, timeout: REQUEST_TIMEOUT_MS });
+/**
+ * For /auth endpoints: no interceptors, so refresh can never recurse into itself. Sends cookies
+ * even cross-origin, because the refresh token lives in the httpOnly `satmis_refresh` cookie.
+ */
+export const authHttp = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: REQUEST_TIMEOUT_MS,
+  withCredentials: true,
+});
 
 http.interceptors.request.use((config) => {
   const accessToken = authHandlers?.getAccessToken();

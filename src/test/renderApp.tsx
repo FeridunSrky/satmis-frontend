@@ -7,7 +7,6 @@ import { App } from '@/app/App';
 import { routes } from '@/app/routes';
 import { useAuthStore } from '@/features/auth/authStore';
 import { installAuth } from '@/features/auth/installAuth';
-import { REFRESH_TOKEN_STORAGE_KEY } from '@/features/auth/tokenStorage';
 import type { UserResponse } from '@/shared/api/types';
 import { buildAuthResponse, testUser } from './fixtures';
 
@@ -42,6 +41,5 @@ export function signInAs(generation = 1, user: UserResponse = testUser): void {
 }
 
 export function signOutCompletely(): void {
-  window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
   useAuthStore.setState({ status: 'anonymous', user: null, accessToken: null });
 }

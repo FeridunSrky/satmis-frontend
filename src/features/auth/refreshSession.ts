@@ -1,30 +1,38 @@
 import axios from 'axios';
-import { HTTP_TOO_MANY_REQUESTS } from '@/shared/api/apiError';
+import {
+  hasStatus,
+  HTTP_TOO_MANY_REQUESTS,
+  REFRESH_TOKEN_ROTATED_CODE,
+  toApiError,
+} from '@/shared/api/apiError';
+import type { AuthResponse } from '@/shared/api/types';
 import { refresh } from './api/authApi';
 import { useAuthStore } from './authStore';
-import { readRefreshToken } from './tokenStorage';
 
 const REFRESH_LOCK_NAME = 'satmis-refresh';
+const HTTP_UNAUTHORIZED = 401;
+const HTTP_FORBIDDEN = 403;
 
-export class NoRefreshTokenError extends Error {
-  constructor() {
-    super('No refresh token available');
-    this.name = 'NoRefreshTokenError';
-  }
-}
+/** Shown instead of the backend's 403 text, which is about request origins, not the user. */
+export const ORIGIN_REJECTED_MESSAGE = 'Oturum doğrulanamadı, lütfen tekrar giriş yapın.';
 
 let refreshInFlight: Promise<void> | null = null;
 
 /**
- * The backend rotates refresh tokens and treats reuse of an old one as theft (it revokes every
- * session). So within a tab all callers share one request, and across tabs the Web Lock makes
- * sure the token is read from storage only after any other tab has finished rotating it.
+ * The backend rotates the refresh cookie and treats reuse of an old one as theft (it revokes every
+ * session). So within a tab all callers share one request, and across tabs the Web Lock makes the
+ * refreshes take turns, each sending the cookie the previous one left behind.
  */
 export function refreshSession(): Promise<void> {
   refreshInFlight ??= withRefreshLock(rotateTokens).finally(() => {
     refreshInFlight = null;
   });
   return refreshInFlight;
+}
+
+/** The backend refused the refresh because of the request origin (its CSRF check). */
+export function isOriginRejected(error: unknown): boolean {
+  return hasStatus(error, HTTP_FORBIDDEN);
 }
 
 function withRefreshLock(task: () => Promise<void>): Promise<void> {
@@ -35,13 +43,8 @@ function withRefreshLock(task: () => Promise<void>): Promise<void> {
 }
 
 async function rotateTokens(): Promise<void> {
-  // Re-read inside the lock: another tab may have rotated the token while this one waited
-  const refreshToken = readRefreshToken();
-  if (!refreshToken) {
-    throw new NoRefreshTokenError();
-  }
   try {
-    const session = await refresh(refreshToken);
+    const session = await refreshRetryingOnceIfRotated();
     useAuthStore.getState().setSession(session);
   } catch (error) {
     if (isRejectedByServer(error)) {
@@ -51,7 +54,29 @@ async function rotateTokens(): Promise<void> {
   }
 }
 
-// A network failure or a rate limit says nothing about the token, so it is kept for the next attempt
+// Exactly one retry: a second REFRESH_TOKEN_ROTATED is treated like any other rejection
+async function refreshRetryingOnceIfRotated(): Promise<AuthResponse> {
+  try {
+    return await refresh();
+  } catch (error) {
+    if (!isRotatedElsewhere(error)) {
+      throw error;
+    }
+    // Another tab (or browser without Web Locks) won the race; the browser now holds its new cookie
+    return refresh();
+  }
+}
+
+function isRotatedElsewhere(error: unknown): boolean {
+  const apiError = toApiError(error);
+  return (
+    apiError.kind === 'http' &&
+    apiError.status === HTTP_UNAUTHORIZED &&
+    apiError.code === REFRESH_TOKEN_ROTATED_CODE
+  );
+}
+
+// A network failure or a rate limit says nothing about the session, so it is kept for the next try
 function isRejectedByServer(error: unknown): boolean {
   return (
     axios.isAxiosError(error) &&

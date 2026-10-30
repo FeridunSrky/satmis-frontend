@@ -6,9 +6,11 @@ import { buildAuthResponse, buildErrorResponse, testUser } from '@/test/fixtures
 import { currentPath, renderApp, signOutCompletely } from '@/test/renderApp';
 import { apiUrl, server } from '@/test/server';
 import { useAuthStore } from '../authStore';
-import { readRefreshToken } from '../tokenStorage';
+import { readWebStorage } from '@/test/webStorage';
 
 const VALID_PASSWORD = 'GizliSifre123';
+// The backend still echoes the refresh token in the body while it migrates to the cookie
+const DEPRECATED_BODY_TOKEN = 'body-refresh-token';
 
 function mockLogin() {
   server.use(
@@ -19,7 +21,7 @@ function mockLogin() {
           status: 401,
         });
       }
-      return HttpResponse.json(buildAuthResponse(1));
+      return HttpResponse.json({ ...buildAuthResponse(1), refreshToken: DEPRECATED_BODY_TOKEN });
     }),
     mockHttp.get(apiUrl('/users/me'), () => HttpResponse.json(testUser)),
   );
@@ -58,18 +60,36 @@ describe('LoginForm', () => {
     expect(await screen.findByText('Geçerli bir e-posta adresi girin')).toBeInTheDocument();
   });
 
-  it('submit_validCredentials_storesSessionAndRedirectsHome', async () => {
-    const { router } = renderApp('/giris');
+  it('submit_validCredentials_keepsTokensOutOfWebStorageAndUsesAccessToken', async () => {
+    let profileAuthorization: string | null = null;
+    server.use(
+      mockHttp.get(apiUrl('/users/me'), ({ request }) => {
+        profileAuthorization = request.headers.get('Authorization');
+        return HttpResponse.json(testUser);
+      }),
+    );
+    const { router } = renderApp('/giris?next=%2Fprofil');
 
     await fillAndSubmit(testUser.email, VALID_PASSWORD);
 
-    await waitFor(() => expect(currentPath(router)).toBe('/'));
+    await waitFor(() => expect(currentPath(router)).toBe('/profil'));
     expect(useAuthStore.getState()).toMatchObject({
       status: 'authenticated',
       accessToken: 'access-1',
       user: testUser,
     });
-    expect(readRefreshToken()).toBe('refresh-1');
+    await waitFor(() => expect(profileAuthorization).toBe('Bearer access-1'));
+    const webStorage = readWebStorage();
+    expect(webStorage).not.toContain('access-1');
+    expect(webStorage).not.toContain(DEPRECATED_BODY_TOKEN);
+  });
+
+  it('submit_validCredentials_redirectsHome', async () => {
+    const { router } = renderApp('/giris');
+
+    await fillAndSubmit(testUser.email, VALID_PASSWORD);
+
+    await waitFor(() => expect(currentPath(router)).toBe('/'));
   });
 
   it('submit_withNextParam_returnsToRequestedPage', async () => {

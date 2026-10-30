@@ -15,7 +15,6 @@ export const unverifiedUser: UserResponse = { ...testUser, emailVerified: false 
 export function buildAuthResponse(generation: number, user = testUser): AuthResponse {
   return {
     accessToken: `access-${generation}`,
-    refreshToken: `refresh-${generation}`,
     tokenType: 'Bearer',
     expiresInSeconds: 900,
     user,

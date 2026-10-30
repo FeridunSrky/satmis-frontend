@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event';
 import { http as mockHttp, HttpResponse } from 'msw/http';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useAuthStore } from '@/features/auth/authStore';
-import { readRefreshToken } from '@/features/auth/tokenStorage';
 import { buildErrorResponse, testUser } from '@/test/fixtures';
 import { currentPath, renderApp, signInAs } from '@/test/renderApp';
 import { apiUrl, server } from '@/test/server';
@@ -37,8 +36,7 @@ describe('ChangePasswordForm', () => {
       await screen.findByText('Şifreniz değişti, lütfen tekrar giriş yapın'),
     ).toBeInTheDocument();
     await waitFor(() => expect(currentPath(router)).toBe('/giris?next=%2Fprofil'));
-    expect(useAuthStore.getState().status).toBe('anonymous');
-    expect(readRefreshToken()).toBeNull();
+    expect(useAuthStore.getState()).toMatchObject({ status: 'anonymous', accessToken: null });
   });
 
   it('submit_wrongCurrentPassword_showsErrorOnCurrentPasswordField', async () => {

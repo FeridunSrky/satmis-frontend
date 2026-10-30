@@ -1,20 +1,17 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { logout } from './api/authApi';
 import { useAuthStore } from './authStore';
-import { readRefreshToken } from './tokenStorage';
+import { announceLoggedOut } from './sessionChannel';
 
 /**
- * Clears the local session first so the UI reacts immediately; telling the backend is
- * best-effort because the user must end up logged out locally either way.
+ * Clears the local session first so the UI reacts immediately; telling the backend (which revokes
+ * the token and deletes the refresh cookie) is best-effort because the user must end up logged
+ * out locally either way.
  */
 export async function endSession(queryClient: QueryClient): Promise<void> {
-  const refreshToken = readRefreshToken();
   clearLocalSession(queryClient);
-  if (!refreshToken) {
-    return;
-  }
   try {
-    await logout(refreshToken);
+    await logout();
   } catch {
     console.warn('Logout request failed; the local session was cleared anyway.');
   }
@@ -24,4 +21,5 @@ export async function endSession(queryClient: QueryClient): Promise<void> {
 export function clearLocalSession(queryClient: QueryClient): void {
   useAuthStore.getState().clearSession();
   queryClient.clear();
+  announceLoggedOut();
 }

@@ -1,43 +1,62 @@
 import { QueryClient } from '@tanstack/react-query';
+import { waitFor } from '@testing-library/react';
 import { http as mockHttp, HttpResponse } from 'msw/http';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { useAuthStore } from '@/features/auth/authStore';
 import { installAuth } from '@/features/auth/installAuth';
-import { readRefreshToken, REFRESH_TOKEN_STORAGE_KEY } from '@/features/auth/tokenStorage';
 import { getCurrentUser } from '@/features/user/api/userApi';
 import { buildAuthResponse, buildErrorResponse, testUser } from '@/test/fixtures';
 import { apiUrl, server } from '@/test/server';
 
+type RefreshAnswer = 'ok' | 'expired' | 'rotated' | 'rateLimited' | 'forbidden';
+
 interface BackendCounters {
   refreshCalls: number;
-  refreshTokensUsed: string[];
+  refreshBodies: string[];
   meCalls: number;
 }
 
-// Simulates the backend: only the rotated access token is accepted, and each refresh token works once
 const RATE_LIMIT_MESSAGE = 'Çok fazla deneme yaptınız, lütfen 60 saniye sonra tekrar deneyin';
 
+function refreshResponse(answer: RefreshAnswer): Response {
+  switch (answer) {
+    case 'ok':
+      return HttpResponse.json(buildAuthResponse(2));
+    case 'expired':
+      return HttpResponse.json(buildErrorResponse(401, 'Oturum geçersiz'), { status: 401 });
+    case 'rotated':
+      return HttpResponse.json(
+        {
+          ...buildErrorResponse(401, 'Oturum başka sekmede yenilendi'),
+          code: 'REFRESH_TOKEN_ROTATED',
+        },
+        { status: 401 },
+      );
+    case 'rateLimited':
+      return HttpResponse.json(buildErrorResponse(429, RATE_LIMIT_MESSAGE), {
+        status: 429,
+        headers: { 'Retry-After': '60' },
+      });
+    case 'forbidden':
+      return HttpResponse.json(buildErrorResponse(403, 'İstek kaynağı doğrulanamadı'), {
+        status: 403,
+      });
+  }
+}
+
+// Simulates the backend: only the rotated access token is accepted. The refresh token itself sits
+// in an httpOnly cookie that the browser sends, so the mock only answers in the given order.
 function mockBackend({
-  refreshSucceeds = true,
-  refreshRateLimited = false,
+  refreshAnswers = [] as RefreshAnswer[],
   meAlwaysUnauthorized = false,
 } = {}) {
-  const counters: BackendCounters = { refreshCalls: 0, refreshTokensUsed: [], meCalls: 0 };
+  const counters: BackendCounters = { refreshCalls: 0, refreshBodies: [], meCalls: 0 };
   server.use(
     mockHttp.post(apiUrl('/auth/refresh'), async ({ request }) => {
-      const { refreshToken } = (await request.json()) as { refreshToken: string };
+      counters.refreshBodies.push(await request.text());
+      const answer = refreshAnswers[counters.refreshCalls] ?? 'ok';
       counters.refreshCalls += 1;
-      counters.refreshTokensUsed.push(refreshToken);
-      if (refreshRateLimited) {
-        return HttpResponse.json(buildErrorResponse(429, RATE_LIMIT_MESSAGE), {
-          status: 429,
-          headers: { 'Retry-After': '60' },
-        });
-      }
-      if (!refreshSucceeds) {
-        return HttpResponse.json(buildErrorResponse(401, 'Oturum geçersiz'), { status: 401 });
-      }
-      return HttpResponse.json(buildAuthResponse(2));
+      return refreshResponse(answer);
     }),
     mockHttp.get(apiUrl('/users/me'), ({ request }) => {
       counters.meCalls += 1;
@@ -51,6 +70,15 @@ function mockBackend({
   return counters;
 }
 
+function expectSessionEnded(navigate: (path: string) => void) {
+  expect(useAuthStore.getState()).toMatchObject({
+    status: 'anonymous',
+    user: null,
+    accessToken: null,
+  });
+  expect(navigate).toHaveBeenCalledWith('/giris?next=%2Fprofil');
+}
+
 describe('http client session handling', () => {
   const navigate = vi.fn<(path: string) => void>();
   let uninstallAuth: () => void;
@@ -61,7 +89,7 @@ describe('http client session handling', () => {
       navigate,
       getCurrentPath: () => '/profil',
     });
-    // Session with an expired access token and a still valid refresh token
+    // Session with an expired access token and a still valid refresh cookie
     useAuthStore.getState().setSession(buildAuthResponse(1));
   });
 
@@ -70,15 +98,15 @@ describe('http client session handling', () => {
     vi.unstubAllGlobals();
   });
 
-  it('getCurrentUser_accessTokenExpired_refreshesAndRetriesOnce', async () => {
+  it('getCurrentUser_accessTokenExpired_refreshesWithoutBodyAndRetriesOnce', async () => {
     const counters = mockBackend();
 
     await expect(getCurrentUser()).resolves.toEqual(testUser);
 
     expect(counters.refreshCalls).toBe(1);
+    expect(counters.refreshBodies).toEqual(['']);
     expect(counters.meCalls).toBe(2);
     expect(useAuthStore.getState().accessToken).toBe('access-2');
-    expect(readRefreshToken()).toBe('refresh-2');
   });
 
   it('getCurrentUser_retryAlsoUnauthorized_doesNotRetryAgain', async () => {
@@ -90,32 +118,55 @@ describe('http client session handling', () => {
     expect(counters.meCalls).toBe(2);
   });
 
-  it('concurrentRequests_bothUnauthorized_refreshIsCalledOnlyOnce', async () => {
+  it('concurrentRequests_allUnauthorized_refreshIsCalledOnlyOnce', async () => {
     const counters = mockBackend();
 
     const users = await Promise.all([getCurrentUser(), getCurrentUser(), getCurrentUser()]);
 
     expect(users).toEqual([testUser, testUser, testUser]);
     expect(counters.refreshCalls).toBe(1);
-    expect(counters.refreshTokensUsed).toEqual(['refresh-1']);
   });
 
-  it('refreshFails_clearsSessionAndRedirectsToLogin', async () => {
-    mockBackend({ refreshSucceeds: false });
+  it('refreshRotatedInOtherTab_retriesOnceAndKeepsSession', async () => {
+    const counters = mockBackend({ refreshAnswers: ['rotated', 'ok'] });
+
+    await expect(getCurrentUser()).resolves.toEqual(testUser);
+
+    expect(counters.refreshCalls).toBe(2);
+    expect(useAuthStore.getState()).toMatchObject({
+      status: 'authenticated',
+      accessToken: 'access-2',
+    });
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('refreshRotatedTwice_endsSessionWithoutLooping', async () => {
+    const counters = mockBackend({ refreshAnswers: ['rotated', 'rotated', 'rotated'] });
 
     await expect(getCurrentUser()).rejects.toMatchObject({ response: { status: 401 } });
 
-    expect(useAuthStore.getState()).toMatchObject({
-      status: 'anonymous',
-      user: null,
-      accessToken: null,
-    });
-    expect(readRefreshToken()).toBeNull();
-    expect(navigate).toHaveBeenCalledWith('/giris?next=%2Fprofil');
+    expect(counters.refreshCalls).toBe(2);
+    expectSessionEnded(navigate);
+  });
+
+  it('refreshExpired_clearsSessionAndRedirectsToLogin', async () => {
+    mockBackend({ refreshAnswers: ['expired'] });
+
+    await expect(getCurrentUser()).rejects.toMatchObject({ response: { status: 401 } });
+
+    expectSessionEnded(navigate);
+  });
+
+  it('refreshOriginRejected_clearsSessionAndRedirectsToLogin', async () => {
+    mockBackend({ refreshAnswers: ['forbidden'] });
+
+    await expect(getCurrentUser()).rejects.toMatchObject({ response: { status: 401 } });
+
+    expectSessionEnded(navigate);
   });
 
   it('refreshRateLimited_keepsSessionAndPassesThe429ToTheCaller', async () => {
-    mockBackend({ refreshRateLimited: true });
+    mockBackend({ refreshAnswers: ['rateLimited'] });
 
     await expect(getCurrentUser()).rejects.toMatchObject({ response: { status: 429 } });
 
@@ -124,18 +175,17 @@ describe('http client session handling', () => {
       accessToken: 'access-1',
       user: testUser,
     });
-    expect(readRefreshToken()).toBe('refresh-1');
     expect(navigate).not.toHaveBeenCalled();
   });
 
-  it('refreshUnderLock_otherTabRotatedToken_usesLatestStoredToken', async () => {
-    const counters = mockBackend();
-    // Another tab finishes its own rotation while this tab waits for the lock
+  it('refresh_runsInsideTheCrossTabWebLock', async () => {
+    mockBackend();
+    const lockNames: string[] = [];
     vi.stubGlobal('navigator', {
       ...navigator,
       locks: {
-        request: (_name: string, task: () => Promise<void>) => {
-          window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, 'refresh-from-other-tab');
+        request: (name: string, task: () => Promise<void>) => {
+          lockNames.push(name);
           return task();
         },
       },
@@ -143,6 +193,15 @@ describe('http client session handling', () => {
 
     await getCurrentUser();
 
-    expect(counters.refreshTokensUsed).toEqual(['refresh-from-other-tab']);
+    expect(lockNames).toEqual(['satmis-refresh']);
+  });
+
+  it('logoutInAnotherTab_endsThisSessionToo', async () => {
+    const otherTab = new BroadcastChannel('satmis-session');
+    onTestFinished(() => otherTab.close());
+
+    otherTab.postMessage('logged-out');
+
+    await waitFor(() => expect(useAuthStore.getState().status).toBe('anonymous'));
   });
 });

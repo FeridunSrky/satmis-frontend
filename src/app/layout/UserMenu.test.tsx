@@ -3,20 +3,19 @@ import userEvent from '@testing-library/user-event';
 import { http as mockHttp, HttpResponse } from 'msw/http';
 import { describe, expect, it } from 'vitest';
 import { useAuthStore } from '@/features/auth/authStore';
-import { readRefreshToken } from '@/features/auth/tokenStorage';
 import { testUser } from '@/test/fixtures';
 import { currentPath, renderApp, signInAs } from '@/test/renderApp';
 import { apiUrl, server } from '@/test/server';
 
 describe('UserMenu', () => {
   it('logout_fromProtectedPage_endsSessionAndGoesHome', async () => {
-    const revokedTokens: string[] = [];
+    const logoutBodies: string[] = [];
     signInAs(1);
     server.use(
       mockHttp.get(apiUrl('/users/me'), () => HttpResponse.json(testUser)),
       mockHttp.post(apiUrl('/auth/logout'), async ({ request }) => {
-        const { refreshToken } = (await request.json()) as { refreshToken: string };
-        revokedTokens.push(refreshToken);
+        // The backend revokes the token from the httpOnly cookie, so nothing is sent in the body
+        logoutBodies.push(await request.text());
         return new HttpResponse(null, { status: 204 });
       }),
     );
@@ -27,9 +26,8 @@ describe('UserMenu', () => {
     await user.click(screen.getByRole('button', { name: 'Çıkış yap' }));
 
     await waitFor(() => expect(currentPath(router)).toBe('/'));
-    expect(useAuthStore.getState().status).toBe('anonymous');
-    expect(readRefreshToken()).toBeNull();
-    await waitFor(() => expect(revokedTokens).toEqual(['refresh-1']));
+    expect(useAuthStore.getState()).toMatchObject({ status: 'anonymous', accessToken: null });
+    await waitFor(() => expect(logoutBodies).toEqual(['']));
   });
 
   it('logout_backendUnreachable_stillEndsLocalSession', async () => {

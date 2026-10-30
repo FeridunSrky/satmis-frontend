@@ -3,7 +3,6 @@ import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { http as mockHttp, HttpResponse } from 'msw/http';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useAuthStore } from '@/features/auth/authStore';
-import { readRefreshToken } from '@/features/auth/tokenStorage';
 import { buildErrorResponse } from '@/test/fixtures';
 import { currentPath, renderApp, signInAs, signOutCompletely } from '@/test/renderApp';
 import { apiUrl, server } from '@/test/server';
@@ -121,7 +120,6 @@ describe('ResetPasswordPage', () => {
     expect(await screen.findByText('Şifren değişti, yeni şifrenle giriş yap')).toBeInTheDocument();
     expect(sentBodies).toEqual([{ token: 'reset-1', newPassword: 'YeniSifre123' }]);
     expect(useAuthStore.getState()).toMatchObject({ status: 'anonymous', accessToken: null });
-    expect(readRefreshToken()).toBeNull();
   });
 
   it('passwordRejected_showsErrorOnFieldAndKeepsForm', async () => {

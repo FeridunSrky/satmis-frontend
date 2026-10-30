@@ -3,8 +3,6 @@ import type {
   AuthResponse,
   ForgotPasswordRequest,
   LoginRequest,
-  LogoutRequest,
-  RefreshRequest,
   RegisterRequest,
   ResetPasswordRequest,
   VerifyEmailRequest,
@@ -20,15 +18,14 @@ export async function register(request: RegisterRequest): Promise<AuthResponse> 
   return response.data;
 }
 
-export async function refresh(refreshToken: string): Promise<AuthResponse> {
-  const request: RefreshRequest = { refreshToken };
-  const response = await authHttp.post<AuthResponse>('/auth/refresh', request);
+// No body: the browser sends the httpOnly refresh cookie and the backend reads it from there
+export async function refresh(): Promise<AuthResponse> {
+  const response = await authHttp.post<AuthResponse>('/auth/refresh');
   return response.data;
 }
 
-export async function logout(refreshToken: string): Promise<void> {
-  const request: LogoutRequest = { refreshToken };
-  await authHttp.post('/auth/logout', request);
+export async function logout(): Promise<void> {
+  await authHttp.post('/auth/logout');
 }
 
 export async function verifyEmail(token: string): Promise<void> {

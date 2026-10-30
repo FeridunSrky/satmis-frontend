@@ -4,8 +4,8 @@ import { toast } from 'sonner';
 import { registerAuthHandlers } from '@/shared/api/http';
 import { buildLoginPath } from '@/shared/lib/safeRedirect';
 import { useAuthStore } from './authStore';
-import { refreshSession } from './refreshSession';
-import { REFRESH_TOKEN_STORAGE_KEY } from './tokenStorage';
+import { isOriginRejected, ORIGIN_REJECTED_MESSAGE, refreshSession } from './refreshSession';
+import { openSessionChannel } from './sessionChannel';
 
 interface InstallAuthOptions {
   queryClient: QueryClient;
@@ -25,21 +25,22 @@ export function installAuth({ queryClient, navigate, getCurrentPath }: InstallAu
       }
       useAuthStore.getState().clearSession();
       queryClient.clear();
-      toast.info('Oturumunuzun süresi doldu, lütfen tekrar giriş yapın.');
+      if (isOriginRejected(refreshError)) {
+        toast.error(ORIGIN_REJECTED_MESSAGE);
+      } else {
+        toast.info('Oturumunuzun süresi doldu, lütfen tekrar giriş yapın.');
+      }
       navigate(buildLoginPath(getCurrentPath()));
     },
   });
 
-  // Logging out in one tab removes the shared refresh token; follow along in the others
-  const handleStorage = (event: StorageEvent) => {
-    const loggedOutElsewhere = event.key === REFRESH_TOKEN_STORAGE_KEY && event.newValue === null;
-    if (loggedOutElsewhere && useAuthStore.getState().status === 'authenticated') {
+  // Logging out in one tab deletes the shared refresh cookie; follow along in the others
+  return openSessionChannel(() => {
+    if (useAuthStore.getState().status === 'authenticated') {
       useAuthStore.getState().clearSession();
       queryClient.clear();
     }
-  };
-  window.addEventListener('storage', handleStorage);
-  return () => window.removeEventListener('storage', handleStorage);
+  });
 }
 
 function isNetworkError(error: unknown): boolean {
