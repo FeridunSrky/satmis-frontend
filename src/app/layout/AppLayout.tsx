@@ -1,4 +1,5 @@
 import { Outlet, ScrollRestoration } from 'react-router-dom';
+import { EmailVerificationBanner } from '@/features/auth/components/EmailVerificationBanner';
 import { Footer } from './Footer';
 import { Header } from './Header';
 
@@ -12,6 +13,7 @@ export function AppLayout() {
         İçeriğe geç
       </a>
       <Header />
+      <EmailVerificationBanner />
       <main id="main-content" className="flex flex-1 flex-col">
         <Outlet />
       </main>

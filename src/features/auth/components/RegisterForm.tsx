@@ -5,6 +5,7 @@ import { Button } from '@/shared/components/Button';
 import { FormAlert } from '@/shared/components/FormAlert';
 import { PasswordField } from '@/shared/components/PasswordField';
 import { TextField } from '@/shared/components/TextField';
+import { useRetryCooldown } from '@/shared/hooks/useRetryCooldown';
 import { applyServerErrors } from '@/shared/lib/formServerErrors';
 import { PASSWORD_MIN_LENGTH } from '@/shared/lib/validation';
 import { useRegister } from '../hooks/useAuthMutations';
@@ -16,6 +17,7 @@ const HTTP_CONFLICT = 409;
 // The backend returns a token pair on 201, so a successful registration is also a login
 export function RegisterForm() {
   const registerMutation = useRegister();
+  const { isCoolingDown, startCooldown } = useRetryCooldown();
   const {
     register,
     handleSubmit,
@@ -30,7 +32,9 @@ export function RegisterForm() {
     try {
       await registerMutation.mutateAsync(values);
     } catch (error) {
-      applyServerErrors(toApiError(error), setError, {
+      const apiError = toApiError(error);
+      startCooldown(apiError);
+      applyServerErrors(apiError, setError, {
         formFields: REGISTER_FIELDS,
         statusFields: {
           [HTTP_CONFLICT]: {
@@ -84,7 +88,7 @@ export function RegisterForm() {
         error={errors.password?.message}
         {...register('password')}
       />
-      <Button type="submit" size="lg" fullWidth disabled={isSubmitting}>
+      <Button type="submit" size="lg" fullWidth disabled={isSubmitting || isCoolingDown}>
         {isSubmitting ? 'Gönderiliyor...' : 'Hesap oluştur'}
       </Button>
     </form>
