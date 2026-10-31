@@ -26,6 +26,11 @@ export function Header() {
           <NavLink to="/ilanlar" className={navLinkClassName}>
             İlanlar
           </NavLink>
+          {user?.role === 'ADMIN' && (
+            <NavLink to="/admin" className={navLinkClassName}>
+              Yönetim
+            </NavLink>
+          )}
         </nav>
         <HeaderSearch className="hidden max-w-sm flex-1 md:block" />
 

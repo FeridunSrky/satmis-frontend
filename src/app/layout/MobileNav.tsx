@@ -35,6 +35,11 @@ export function MobileNav({ id, onNavigate }: MobileNavProps) {
         <NavLink to="/ilanlar" className={navLinkClassName} onClick={onNavigate}>
           İlanlar
         </NavLink>
+        {user?.role === 'ADMIN' && (
+          <NavLink to="/admin" className={navLinkClassName} onClick={onNavigate}>
+            Yönetim
+          </NavLink>
+        )}
         {status === 'authenticated' &&
           USER_MENU_LINKS.map((menuLink) => (
             <NavLink
