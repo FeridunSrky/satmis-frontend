@@ -1,21 +1,25 @@
 # satmis.com — Frontend
 
-Web client for **satmis.com**, a second-hand car marketplace for the Turkish market: browse and filter
-vehicle listings, publish and manage your own, and keep a list of favorites.
+Web client for **satmis.com**, a second-hand car marketplace for the Turkish market: search, browse and
+filter vehicle listings, publish and manage your own, and keep a list of favorites.
 
 Built with React 19, TypeScript (strict) and TanStack Query against a Spring Boot REST API
 ([satmis-backend](https://github.com/FeridunSrky/satmis-backend)).
 
 ## Features
 
-- **Listing search**: filter by brand → model → series, city → district, price, year, mileage,
-  fuel, gearbox, body type, seller type and damage record, then sort and page through the results.
-  Every filter lives in the URL with readable Turkish parameters (`/ilanlar?marka=13&kasa=suv&sayfa=2`),
-  so searches can be bookmarked and shared, and the back button works as expected.
+- **Listing search**: search by keyword ("passat dizel") from the listings page or the header, and
+  filter by brand → model → series, city → district, price, year, mileage, fuel, gearbox, body type,
+  seller type and damage record, then sort and page through the results. The keyword and every
+  filter live in the URL with readable Turkish parameters
+  (`/ilanlar?q=passat+dizel&marka=13&kasa=suv&sayfa=2`), so searches can be bookmarked and shared,
+  and the back button works as expected.
 - **Listing detail**: image gallery, full vehicle specs, seller, view and favorite counts. The
   seller's phone number is shown to signed-in users only.
-- **Publishing**: a multi-section form with cascading catalog selects, image ordering (the first
-  image is the cover) and validation that mirrors the backend rules.
+- **Publishing**: a multi-section form with cascading catalog selects, photo upload (up to 20 per
+  listing, with progress and retry), image ordering (the first image is the cover) and validation
+  that mirrors the backend rules. Photos are resized to at most 2048 px and re-encoded in the browser,
+  which also strips EXIF/GPS data, then uploaded straight to object storage through a signed URL.
 - **Owner tools**: edit, unpublish, republish, mark as sold or delete. Only the status transitions
   the backend allows are offered.
 - **Favorites**: one-click add/remove with instant feedback, plus a favorites page.
@@ -40,6 +44,10 @@ exactly once. Logging out in one tab ends the session in the others through a `B
 values are dropped without breaking the rest of the query, and the parsed filters are mapped to the API's
 parameter names (`sayfa` is 1-based in the URL, `page` is 0-based in the API). Changing a parent
 filter clears its dependents (brand → model → series, city → district) and resets paging.
+The keyword is sent only when the search is submitted, never on every keystroke. It is trimmed and
+capped at the API's 100-character limit, but otherwise sent exactly as typed, because the backend
+already handles case and Turkish letters (`IŞIKLI` = `ışıklı` = `isikli`). A new search starts from
+page 1 and keeps the active filters and sort order, and the input follows the URL on Back and Forward.
 
 **Server state done deliberately.** TanStack Query with query-key factories. Favorites update
 optimistically and roll back on error. Because the backend counts a view on every detail request,
@@ -74,7 +82,7 @@ and support for reduced motion.
 
 ## Testing
 
-108 tests exercise the app through the UI like a user would, against MSW-mocked endpoints, rather
+144 tests exercise the app through the UI like a user would, against MSW-mocked endpoints, rather
 than testing implementation details. They cover:
 
 - token refresh races, multi-tab logout and session restore, including the rotated-token retry
@@ -83,6 +91,8 @@ than testing implementation details. They cover:
 - email verification (one request even under StrictMode) and password reset, including dead links
 - rate limiting: a `429` on token refresh keeps the session, and `Retry-After` disables the form
 - URL ↔ API filter mapping, cascading selects and empty/error states
+- keyword search: sent only on submit, trimmed but otherwise unchanged (Turkish letters included),
+  kept across paging, sorting and filter changes, and kept in sync with the URL on Back and Forward
 - listing creation and editing, including `400`, `422` and `409` responses
 - owner-only actions and allowed status transitions
 - optimistic favorites with rollback, and a check that favoriting never triggers an extra detail request
@@ -93,7 +103,7 @@ npm test
 
 ## Getting started
 
-Requires Node.js 20.19+ (or 22.12+) and the [backend](https://github.com/FeridunSrky/satmis-backend) running on
+Requires Node.js 24 (see `.nvmrc`) and the [backend](https://github.com/FeridunSrky/satmis-backend) running on
 `http://localhost:8080`. In development, Vite proxies `/api` to the backend, so no CORS setup is
 needed.
 
@@ -123,7 +133,7 @@ src/
     auth/       session, token refresh, login/register forms, route guards
     user/       profile and password
     catalog/    brands, models, series, cities, districts
-    listings/   search filters, detail, listing form, owner actions
+    listings/   keyword search and filters, detail, listing form, owner actions
     favorites/  favorite toggle and favorites list
   pages/        route components (lazy-loaded)
   shared/       HTTP client, error parsing, UI components, formatting
@@ -132,7 +142,5 @@ src/
 
 ## Roadmap
 
-- Image upload (listings currently take `https://` image URLs)
-- Keyword search in listings
 - SMS verification of phone numbers
 - Admin moderation of new listings
