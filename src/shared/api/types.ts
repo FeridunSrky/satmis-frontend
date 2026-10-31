@@ -11,8 +11,7 @@ export interface UserResponse {
   emailVerified: boolean;
 }
 
-// The refresh token travels only in the httpOnly `satmis_refresh` cookie. The backend still echoes
-// it in the body during the migration, but that field is deliberately left out of this type.
+// The refresh token travels only in the httpOnly `satmis_refresh` cookie, never in the body.
 export interface AuthResponse {
   accessToken: string;
   tokenType: 'Bearer';
