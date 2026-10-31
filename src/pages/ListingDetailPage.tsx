@@ -1,9 +1,11 @@
 import { useParams } from 'react-router-dom';
+import { ApprovalStatusNotice } from '@/features/listings/components/ApprovalStatusNotice';
 import { ListingGallery } from '@/features/listings/components/ListingGallery';
 import { ListingSidePanel } from '@/features/listings/components/ListingSidePanel';
 import { ListingSpecs } from '@/features/listings/components/ListingSpecs';
 import { useListing } from '@/features/listings/hooks/useListingQueries';
 import { parseListingId } from '@/features/listings/listingId';
+import type { ListingDetail } from '@/features/listings/types';
 import { hasStatus, toApiError } from '@/shared/api/apiError';
 import { Button, ButtonLink } from '@/shared/components/Button';
 import { FullPageLoader } from '@/shared/components/FullPageLoader';
@@ -40,7 +42,16 @@ export function ListingDetailPage() {
   const listing = listingQuery.data;
   // One panel in the DOM: under the photos on small screens, a sticky sidebar on large ones
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[1fr_22rem] lg:items-start">
+    <div className="mx-auto w-full max-w-6xl px-4 py-8">
+      <ApprovalStatusNotice listing={listing} />
+      <ListingDetailGrid listing={listing} />
+    </div>
+  );
+}
+
+function ListingDetailGrid({ listing }: { listing: ListingDetail }) {
+  return (
+    <div className="mt-8 grid gap-8 first:mt-0 lg:grid-cols-[1fr_22rem] lg:items-start">
       <div className="min-w-0 lg:col-start-1">
         <ListingGallery images={listing.images} title={listing.title} />
       </div>

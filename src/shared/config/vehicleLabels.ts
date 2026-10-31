@@ -15,6 +15,7 @@ export const LISTING_STATUS_LABELS: Record<ListingStatus, string> = {
   ACTIVE: 'Yayında',
   PASSIVE: 'Yayında değil',
   SOLD: 'Satıldı',
+  REJECTED: 'Reddedildi',
 };
 
 export const CURRENCY_LABELS: Record<CurrencyType, string> = {

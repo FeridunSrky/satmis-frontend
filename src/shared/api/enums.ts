@@ -1,6 +1,12 @@
 // Backend enum values (see /v3/api-docs). Kept as arrays so Zod schemas and selects share them.
 export const CURRENCIES = ['TRY', 'USD', 'EUR'] as const;
-export const LISTING_STATUSES = ['PENDING_APPROVAL', 'ACTIVE', 'PASSIVE', 'SOLD'] as const;
+export const LISTING_STATUSES = [
+  'PENDING_APPROVAL',
+  'ACTIVE',
+  'PASSIVE',
+  'SOLD',
+  'REJECTED',
+] as const;
 export const FUEL_TYPES = ['GASOLINE', 'DIESEL', 'LPG', 'HYBRID', 'ELECTRIC'] as const;
 export const GEAR_TYPES = ['MANUAL', 'AUTOMATIC', 'SEMI_AUTOMATIC'] as const;
 export const BODY_TYPE_VALUES = [

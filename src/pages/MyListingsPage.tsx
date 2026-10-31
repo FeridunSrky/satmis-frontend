@@ -19,7 +19,9 @@ export function MyListingsPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-4xl font-bold sm:text-5xl">İlanlarım</h1>
-          <p className="mt-2 text-muted">Yayında olan, kaldırılan ve satılan tüm ilanların.</p>
+          <p className="mt-2 text-muted">
+            Onay bekleyen, yayında olan, kaldırılan ve satılan tüm ilanların.
+          </p>
         </div>
         <ButtonLink to="/ilan-ver">İlan ver</ButtonLink>
       </div>
