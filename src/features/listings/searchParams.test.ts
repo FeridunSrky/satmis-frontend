@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyFilterChange,
+  countActiveFilters,
   parseListingFilters,
   toListingSearchQuery,
   toSearchParams,
@@ -50,6 +51,36 @@ describe('parseListingFilters + toListingSearchQuery', () => {
     );
 
     expect(filters).toEqual({ page: 1, gearType: 'AUTOMATIC' });
+  });
+});
+
+describe('keyword (q)', () => {
+  it('keyword_isTrimmedAndSentAsTyped', () => {
+    expect(toListingSearchQuery(parse('q=%20%20IŞIKLI%20çağdaş%20&sayfa=2'))).toEqual({
+      q: 'IŞIKLI çağdaş',
+      page: 1,
+      size: 20,
+    });
+  });
+
+  it('blankKeyword_isLeftOut', () => {
+    expect(parse('q=%20%20%20')).toEqual({ page: 1 });
+  });
+
+  it('keywordLongerThan100_isCutTo100', () => {
+    const keyword = parse(`q=${'a'.repeat(150)}`).q;
+
+    expect(keyword).toHaveLength(100);
+  });
+
+  it('keyword_roundTripsToUrlFirst', () => {
+    const params = toSearchParams(parse('kasa=suv&q=passat+dizel'));
+
+    expect(params.toString()).toBe('q=passat+dizel&kasa=suv');
+  });
+
+  it('countActiveFilters_ignoresKeyword', () => {
+    expect(countActiveFilters(parse('q=golf&yakit=LPG&sirala=KM_ASC'))).toBe(1);
   });
 });
 

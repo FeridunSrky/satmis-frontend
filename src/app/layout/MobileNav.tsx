@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/authStore';
 import { useLogout } from '@/features/auth/hooks/useAuthMutations';
 import { Button, ButtonLink } from '@/shared/components/Button';
+import { HeaderSearch } from './HeaderSearch';
 import { navLinkClassName } from './navLinkClassName';
 import { USER_MENU_LINKS } from './userMenuLinks';
 
@@ -29,6 +30,7 @@ export function MobileNav({ id, onNavigate }: MobileNavProps) {
       aria-label="Mobil menü"
       className="border-t border-line bg-paper px-4 pt-3 pb-5 md:hidden"
     >
+      <HeaderSearch className="mb-3" onSearch={onNavigate} />
       <div className="flex flex-col gap-1">
         <NavLink to="/ilanlar" className={navLinkClassName} onClick={onNavigate}>
           İlanlar

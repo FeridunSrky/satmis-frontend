@@ -4,6 +4,7 @@ import { useAuthStore } from '@/features/auth/authStore';
 import { ButtonLink } from '@/shared/components/Button';
 import { PlateMark } from '@/shared/components/PlateMark';
 import { appName } from '@/shared/config/env';
+import { HeaderSearch } from './HeaderSearch';
 import { MobileNav } from './MobileNav';
 import { navLinkClassName } from './navLinkClassName';
 import { UserMenu } from './UserMenu';
@@ -26,6 +27,7 @@ export function Header() {
             İlanlar
           </NavLink>
         </nav>
+        <HeaderSearch className="hidden max-w-sm flex-1 md:block" />
 
         <div className="ml-auto hidden items-center gap-2 md:flex">
           {status === 'authenticated' && user && (
