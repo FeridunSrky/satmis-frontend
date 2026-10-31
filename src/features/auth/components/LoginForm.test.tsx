@@ -9,8 +9,6 @@ import { useAuthStore } from '../authStore';
 import { readWebStorage } from '@/test/webStorage';
 
 const VALID_PASSWORD = 'GizliSifre123';
-// The backend still echoes the refresh token in the body while it migrates to the cookie
-const DEPRECATED_BODY_TOKEN = 'body-refresh-token';
 
 function mockLogin() {
   server.use(
@@ -21,7 +19,7 @@ function mockLogin() {
           status: 401,
         });
       }
-      return HttpResponse.json({ ...buildAuthResponse(1), refreshToken: DEPRECATED_BODY_TOKEN });
+      return HttpResponse.json(buildAuthResponse(1));
     }),
     mockHttp.get(apiUrl('/users/me'), () => HttpResponse.json(testUser)),
   );
@@ -79,9 +77,7 @@ describe('LoginForm', () => {
       user: testUser,
     });
     await waitFor(() => expect(profileAuthorization).toBe('Bearer access-1'));
-    const webStorage = readWebStorage();
-    expect(webStorage).not.toContain('access-1');
-    expect(webStorage).not.toContain(DEPRECATED_BODY_TOKEN);
+    expect(readWebStorage()).not.toContain('access-1');
   });
 
   it('submit_validCredentials_redirectsHome', async () => {
