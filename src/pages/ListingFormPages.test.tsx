@@ -1,37 +1,29 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { http as mockHttp, HttpResponse } from 'msw/http';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildErrorResponse, testUser } from '@/test/fixtures';
+import { createTestPhoto, installImageFakes, mockImageBackend } from '@/test/imageMocks';
 import { buildListingDetail, mockCatalog, ownListingOverrides } from '@/test/listingFixtures';
+import { fillListingFields, pickPhotos, waitForUploadsToSettle } from '@/test/listingFormHelpers';
 import { currentPath, renderApp, signInAs } from '@/test/renderApp';
 import { apiUrl, server } from '@/test/server';
 
-async function chooseOption(user: UserEvent, label: string, option: string) {
-  // Catalog options arrive asynchronously, as they would for a real user
-  await screen.findByRole('option', { name: option });
-  await user.selectOptions(screen.getByRole('combobox', { name: label }), option);
+async function fillValidListing(user: UserEvent) {
+  await fillListingFields(user);
+  await pickPhotos(user, [createTestPhoto(4032, 3024)]);
+  await screen.findByRole('img', { name: 'Görsel 1 (kapak)' });
+  await waitForUploadsToSettle();
 }
 
-async function fillValidListing(user: UserEvent) {
-  await user.type(screen.getByLabelText('Başlık'), 'Hatasız 2019 Clio');
-  await user.type(screen.getByLabelText('Fiyat'), '650000,50');
-  await chooseOption(user, 'Marka', 'Renault');
-  await chooseOption(user, 'Model', 'Clio');
-  await chooseOption(user, 'Seri', '1.0 TCe');
-  await user.type(screen.getByLabelText('Model yılı'), '2019');
-  await user.type(screen.getByLabelText('Kilometre'), '85000');
-  await user.selectOptions(screen.getByLabelText('Yakıt'), 'Benzin');
-  await user.selectOptions(screen.getByLabelText('Vites'), 'Manuel');
-  await chooseOption(user, 'İl', 'İstanbul');
-  await chooseOption(user, 'İlçe', 'Kadıköy');
-  await user.type(screen.getByLabelText('Görsel 1 (kapak)'), 'https://cdn.example.com/clio.jpg');
-}
+afterEach(() => vi.unstubAllGlobals());
 
 describe('CreateListingPage', () => {
   beforeEach(() => {
     signInAs(1);
     mockCatalog();
+    installImageFakes();
+    mockImageBackend();
   });
 
   it('emptySubmit_showsFieldErrorsWithoutRequest', async () => {
@@ -50,7 +42,7 @@ describe('CreateListingPage', () => {
     expect(await screen.findByText('Başlık en az 5 karakter olmalıdır')).toBeInTheDocument();
     expect(screen.getByText('Marka seçin')).toBeInTheDocument();
     expect(screen.getByText('Model yılı zorunludur')).toBeInTheDocument();
-    expect(screen.getByText('Görsel adresi boş olamaz')).toBeInTheDocument();
+    expect(screen.getByText('En az 1 görsel ekleyin')).toBeInTheDocument();
     expect(requestCount).toBe(0);
   });
 
@@ -88,7 +80,7 @@ describe('CreateListingPage', () => {
         hasDamageRecord: false,
         exchangeable: false,
       },
-      imageUrls: ['https://cdn.example.com/clio.jpg'],
+      imageIds: [101],
     });
   });
 
@@ -140,6 +132,8 @@ describe('CreateListingPage without a phone', () => {
   beforeEach(() => {
     signInAs(1);
     mockCatalog();
+    installImageFakes();
+    mockImageBackend();
   });
 
   it('phoneRequired_sendsUserToProfileWithMessage', async () => {
@@ -173,6 +167,8 @@ describe('CreateListingPage with an unverified e-mail', () => {
   beforeEach(() => {
     signInAs(1);
     mockCatalog();
+    installImageFakes();
+    mockImageBackend();
   });
 
   it('emailNotVerified_showsVerificationPromptAboveFormAndStays', async () => {
@@ -216,6 +212,8 @@ describe('EditListingPage', () => {
   beforeEach(() => {
     signInAs(1);
     mockCatalog();
+    installImageFakes();
+    mockImageBackend();
   });
 
   it('versionConflict_offersReloadThatLoadsLatestValues', async () => {

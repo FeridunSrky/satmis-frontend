@@ -11,7 +11,6 @@ import {
 import {
   COLOR_MAX_LENGTH,
   DESCRIPTION_MAX_LENGTH,
-  IMAGE_URL_MAX_LENGTH,
   MAX_ENGINE_CAPACITY,
   MAX_ENGINE_POWER,
   MAX_IMAGES,
@@ -26,7 +25,6 @@ import {
 // Up to 13 integer and 2 decimal digits, as the backend's BigDecimal column allows
 const PRICE_PATTERN = /^\d{1,13}(\.\d{1,2})?$/;
 const DIGITS_ONLY = /^\d+$/;
-const HTTPS_URL = /^https:\/\/\S+$/;
 
 function requiredSelection(message: string) {
   return z.string().min(1, message).transform(Number);
@@ -90,15 +88,6 @@ const priceSchema = z
   })
   .refine((value) => Number(value) > 0, 'Fiyat sıfırdan büyük olmalıdır');
 
-const imageUrlSchema = z.object({
-  url: z
-    .string()
-    .trim()
-    .min(1, 'Görsel adresi boş olamaz')
-    .max(IMAGE_URL_MAX_LENGTH, `Görsel adresi en fazla ${IMAGE_URL_MAX_LENGTH} karakter olabilir`)
-    .regex(HTTPS_URL, 'Görsel adresi https:// ile başlamalıdır'),
-});
-
 export const listingFormSchema = z.object({
   title: z
     .string()
@@ -129,8 +118,9 @@ export const listingFormSchema = z.object({
     hasDamageRecord: z.boolean(),
     exchangeable: z.boolean(),
   }),
-  imageUrls: z
-    .array(imageUrlSchema)
+  // Filled from the image uploader right before validation; the order is the display order
+  imageIds: z
+    .array(z.number())
     .min(MIN_IMAGES, `En az ${MIN_IMAGES} görsel ekleyin`)
     .max(MAX_IMAGES, `En fazla ${MAX_IMAGES} görsel ekleyebilirsiniz`),
 });
