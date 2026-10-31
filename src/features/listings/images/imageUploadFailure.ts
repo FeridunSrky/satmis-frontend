@@ -33,3 +33,12 @@ export function toUploadFailure(error: unknown): UploadFailure {
     apiError.status === HTTP_TOO_MANY_REQUESTS || apiError.status === HTTP_SERVICE_UNAVAILABLE;
   return { message: apiError.message, retryable };
 }
+
+/** Seconds to pause the queue for when the upload-URL rate limit says how long to wait. */
+export function rateLimitWaitSeconds(error: unknown): number | undefined {
+  const apiError = toApiError(error);
+  if (apiError.kind !== 'http' || apiError.status !== HTTP_TOO_MANY_REQUESTS) {
+    return undefined;
+  }
+  return apiError.retryAfterSeconds;
+}

@@ -77,6 +77,8 @@ function createFakeCanvasClass(log: CanvasLog, webpSupported: boolean) {
 const STORAGE_ORIGIN = 'http://storage.test';
 export const UPLOAD_HEADERS = { 'content-type': 'image/webp', 'cache-control': 'max-age=31536000' };
 
+const RATE_LIMIT_MESSAGE = 'Çok fazla deneme yaptınız, lütfen 1 saniye sonra tekrar deneyin';
+
 const STORAGE_CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'PUT',
@@ -96,6 +98,10 @@ export interface ImageBackendLog {
 }
 
 interface ImageBackendOptions {
+  /** Answers for POST /listing-images in call order; 'rateLimited' is a 429 with Retry-After: 1. */
+  reserveAnswers?: Array<'ok' | 'rateLimited'>;
+  /** Status of every DELETE; the backend answers 404 once the file is already gone. */
+  deleteStatus?: 204 | 404;
   storageAnswers?: StorageAnswer[];
   completeAnswers?: CompleteAnswer[];
   /** Keeps every storage PUT pending until the returned release function is called. */
@@ -113,8 +119,16 @@ export function mockImageBackend(options: ImageBackendOptions = {}) {
   const putGate = createGate(options.holdPuts ?? false);
   let parallelPuts = 0;
   let nextImageId = 100;
+  let reserveCalls = 0;
   server.use(
     mockHttp.post(apiUrl('/listing-images'), async ({ request }) => {
+      reserveCalls += 1;
+      if (options.reserveAnswers?.[reserveCalls - 1] === 'rateLimited') {
+        return HttpResponse.json(buildErrorResponse(429, RATE_LIMIT_MESSAGE), {
+          status: 429,
+          headers: { 'Retry-After': '1' },
+        });
+      }
       nextImageId += 1;
       const id = nextImageId;
       const body = (await request.json()) as { contentType: string; sizeBytes: number };
@@ -158,7 +172,10 @@ export function mockImageBackend(options: ImageBackendOptions = {}) {
     }),
     mockHttp.delete(apiUrl('/listing-images/:id'), ({ params }) => {
       log.deletes.push(Number(params.id));
-      return new HttpResponse(null, { status: 204 });
+      const status = options.deleteStatus ?? 204;
+      return status === 204
+        ? new HttpResponse(null, { status })
+        : HttpResponse.json(buildErrorResponse(status, 'Görsel bulunamadı'), { status });
     }),
   );
   return { log, releasePuts: putGate.release };
