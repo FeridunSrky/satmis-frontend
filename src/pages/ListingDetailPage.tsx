@@ -1,11 +1,9 @@
 import { useParams } from 'react-router-dom';
 import { ApprovalStatusNotice } from '@/features/listings/components/ApprovalStatusNotice';
-import { ListingGallery } from '@/features/listings/components/ListingGallery';
+import { ListingDetailLayout } from '@/features/listings/components/ListingDetailLayout';
 import { ListingSidePanel } from '@/features/listings/components/ListingSidePanel';
-import { ListingSpecs } from '@/features/listings/components/ListingSpecs';
 import { useListing } from '@/features/listings/hooks/useListingQueries';
 import { parseListingId } from '@/features/listings/listingId';
-import type { ListingDetail } from '@/features/listings/types';
 import { hasStatus, toApiError } from '@/shared/api/apiError';
 import { Button, ButtonLink } from '@/shared/components/Button';
 import { FullPageLoader } from '@/shared/components/FullPageLoader';
@@ -40,38 +38,14 @@ export function ListingDetailPage() {
   }
 
   const listing = listingQuery.data;
-  // One panel in the DOM: under the photos on small screens, a sticky sidebar on large ones
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
       <ApprovalStatusNotice listing={listing} />
-      <ListingDetailGrid listing={listing} />
-    </div>
-  );
-}
-
-function ListingDetailGrid({ listing }: { listing: ListingDetail }) {
-  return (
-    <div className="mt-8 grid gap-8 first:mt-0 lg:grid-cols-[1fr_22rem] lg:items-start">
-      <div className="min-w-0 lg:col-start-1">
-        <ListingGallery images={listing.images} title={listing.title} />
-      </div>
-      <div className="lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:self-stretch">
-        <ListingSidePanel listing={listing} />
-      </div>
-      {listing.description && (
-        <section aria-labelledby="description-title" className="min-w-0 lg:col-start-1">
-          <h2 id="description-title" className="font-display text-2xl font-bold">
-            Açıklama
-          </h2>
-          <p className="mt-3 whitespace-pre-line text-ink/90">{listing.description}</p>
-        </section>
-      )}
-      <section aria-labelledby="specs-title" className="min-w-0 lg:col-start-1">
-        <h2 id="specs-title" className="mb-3 font-display text-2xl font-bold">
-          Araç bilgileri
-        </h2>
-        <ListingSpecs vehicle={listing.vehicle} />
-      </section>
+      <ListingDetailLayout
+        listing={listing}
+        aside={<ListingSidePanel listing={listing} />}
+        className="mt-8 first:mt-0"
+      />
     </div>
   );
 }
