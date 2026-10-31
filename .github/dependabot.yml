@@ -7,6 +7,10 @@ updates:
     # Same 7-day wait as the local npm min-release-age, against freshly published malicious versions
     cooldown:
       default-days: 7
+    ignore:
+      # Types must match the Node major pinned in .nvmrc and engines; bump them together by hand
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
     groups:
       minor-and-patch:
         update-types: [minor, patch]
