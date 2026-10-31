@@ -12,6 +12,15 @@ export const testUser: UserResponse = {
 
 export const unverifiedUser: UserResponse = { ...testUser, emailVerified: false };
 
+export const adminUser: UserResponse = {
+  ...testUser,
+  id: 99,
+  email: 'admin@example.com',
+  firstName: 'Yönetici',
+  lastName: 'Kaya',
+  role: 'ADMIN',
+};
+
 export function buildAuthResponse(generation: number, user = testUser): AuthResponse {
   return {
     accessToken: `access-${generation}`,

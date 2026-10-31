@@ -1,7 +1,39 @@
-import type { RouteObject } from 'react-router-dom';
-import { GuestRoute, ProtectedRoute } from '@/features/auth/components/RouteGuards';
+import { Navigate, type RouteObject } from 'react-router-dom';
+import { AdminRoute, GuestRoute, ProtectedRoute } from '@/features/auth/components/RouteGuards';
 import { FullPageLoader } from '@/shared/components/FullPageLoader';
 import { AppLayout } from './layout/AppLayout';
+
+const ADMIN_PAGES: RouteObject[] = [
+  { index: true, element: <Navigate to="ilanlar" replace /> },
+  {
+    path: 'ilanlar',
+    lazy: () =>
+      import('@/pages/admin/AdminListingsPage').then((module) => ({
+        Component: module.AdminListingsPage,
+      })),
+  },
+  {
+    path: 'ilanlar/:id',
+    lazy: () =>
+      import('@/pages/admin/AdminListingReviewPage').then((module) => ({
+        Component: module.AdminListingReviewPage,
+      })),
+  },
+  {
+    path: 'kullanicilar',
+    lazy: () =>
+      import('@/pages/admin/AdminUsersPage').then((module) => ({
+        Component: module.AdminUsersPage,
+      })),
+  },
+  {
+    path: 'katalog',
+    lazy: () =>
+      import('@/pages/admin/AdminCatalogPage').then((module) => ({
+        Component: module.AdminCatalogPage,
+      })),
+  },
+];
 
 // Pages are split per route so the first load only ships what the landing page needs
 export const routes: RouteObject[] = [
@@ -97,6 +129,19 @@ export const routes: RouteObject[] = [
             path: 'profil',
             lazy: () =>
               import('@/pages/ProfilePage').then((module) => ({ Component: module.ProfilePage })),
+          },
+        ],
+      },
+      {
+        path: 'admin',
+        element: <AdminRoute />,
+        children: [
+          {
+            lazy: () =>
+              import('@/features/admin/components/AdminLayout').then((module) => ({
+                Component: module.AdminLayout,
+              })),
+            children: ADMIN_PAGES,
           },
         ],
       },

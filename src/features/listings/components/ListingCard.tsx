@@ -11,9 +11,11 @@ interface ListingCardProps {
   showStatus?: boolean;
   /** Owner or favourite actions rendered under the card body. */
   actions?: ReactNode;
+  /** Where the card leads; the public detail page unless, e.g., the admin review opens instead. */
+  href?: string;
 }
 
-export function ListingCard({ listing, showStatus = false, actions }: ListingCardProps) {
+export function ListingCard({ listing, showStatus = false, actions, href }: ListingCardProps) {
   const vehicleName = `${listing.brandName} ${listing.modelName} ${listing.seriesName}`;
   const specs = [
     String(listing.modelYear),
@@ -52,7 +54,7 @@ export function ListingCard({ listing, showStatus = false, actions }: ListingCar
         </p>
         <h3 className="line-clamp-2 font-semibold">
           {/* The link covers the whole card; actions sit above it via z-index */}
-          <Link to={`/ilan/${listing.id}`} className="after:absolute after:inset-0">
+          <Link to={href ?? `/ilan/${listing.id}`} className="after:absolute after:inset-0">
             {listing.title}
           </Link>
         </h3>

@@ -3,6 +3,10 @@ import type { CurrencyType } from '@/shared/api/enums';
 const LOCALE = 'tr-TR';
 const integerFormatter = new Intl.NumberFormat(LOCALE);
 const dateFormatter = new Intl.DateTimeFormat(LOCALE, { dateStyle: 'long' });
+const dateTimeFormatter = new Intl.DateTimeFormat(LOCALE, {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+});
 
 // Whole amounts are shown without ",00" because that is how car prices are usually written
 export function formatPrice(amount: number, currency: CurrencyType): string {
@@ -34,4 +38,8 @@ export function formatPhone(phone: string): string {
 /** Backend timestamps are UTC ISO strings; Intl renders them in the viewer's local time. */
 export function formatDate(isoTimestamp: string): string {
   return dateFormatter.format(new Date(isoTimestamp));
+}
+
+export function formatDateTime(isoTimestamp: string): string {
+  return dateTimeFormatter.format(new Date(isoTimestamp));
 }
