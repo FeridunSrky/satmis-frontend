@@ -164,6 +164,20 @@ describe('ListingForm images: order and removal', () => {
     expect(canvas.revokedUrls).toHaveLength(1);
   });
 
+  it('removeAlreadyGonePhoto_deleteAnswers404_isTreatedAsDoneWithoutWarning', async () => {
+    const warn = vi.spyOn(console, 'warn');
+    const { log } = mockImageBackend({ deleteStatus: 404 });
+    const user = await openCreateForm();
+    await pickPhotos(user, [photoA()]);
+    await waitForUploadsToSettle();
+
+    await user.click(screen.getByRole('button', { name: '1. görseli kaldır' }));
+
+    await waitFor(() => expect(log.deletes).toEqual([101]));
+    expect(screen.queryByRole('img', { name: /Görsel 1/ })).not.toBeInTheDocument();
+    expect(warn).not.toHaveBeenCalled();
+  });
+
   it('editRemoveExistingAndAddNew_doesNotDeleteExisting_andPutsRemainingIdsInOrder', async () => {
     const { log } = mockImageBackend();
     let sentImageIds: unknown;
@@ -249,6 +263,23 @@ describe('ListingForm images: failures', () => {
     ]);
     expect(log.deletes).toEqual([101]);
     expect(screen.queryByText('Yükleme başarısız')).not.toBeInTheDocument();
+  });
+
+  it('uploadUrlRateLimited_waitsRetryAfterThenContinuesOnItsOwn', async () => {
+    const { log } = mockImageBackend({ reserveAnswers: ['rateLimited'] });
+    const user = await openCreateForm();
+
+    await pickPhotos(user, [photoA()]);
+
+    expect(await screen.findByText(/1 saniye sonra kendiliğinden devam/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: '1. görseli tekrar yükle' }),
+    ).not.toBeInTheDocument();
+    await waitFor(() => expect(log.completes).toEqual([101]));
+    expect(log.reservations).toHaveLength(1);
+    expect(screen.getByRole('button', { name: PUBLISH })).not.toHaveAccessibleDescription(
+      /Yüklenemeyen/,
+    );
   });
 
   it('completeSaysNotUploaded_repeatsThePutOnceAndSucceeds', async () => {
