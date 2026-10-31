@@ -1,6 +1,7 @@
 import type { ListingSort, ListingStatus } from '@/shared/api/enums';
 import { http } from '@/shared/api/http';
 import type { PageResponse } from '@/shared/api/types';
+import { normalizeKeyword } from '../keyword';
 import type {
   ChangeStatusRequest,
   ListingDetail,
@@ -20,7 +21,9 @@ export interface PageQuery {
 export async function searchListings(
   query: ListingSearchQuery,
 ): Promise<PageResponse<ListingSummary>> {
-  const response = await http.get<PageResponse<ListingSummary>>('/listings', { params: query });
+  // axios drops undefined params, so a blank keyword is not sent at all
+  const params = { ...query, q: normalizeKeyword(query.q) };
+  const response = await http.get<PageResponse<ListingSummary>>('/listings', { params });
   return response.data;
 }
 

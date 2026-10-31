@@ -138,6 +138,8 @@ export interface ChangeStatusRequest {
 
 /** Query parameters of GET /api/listings, named as the backend expects them. */
 export interface ListingSearchQuery {
+  /** Keyword, at most 100 characters; sent as typed apart from trimming. */
+  q?: string;
   brandId?: number;
   modelId?: number;
   seriesId?: number;

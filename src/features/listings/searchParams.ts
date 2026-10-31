@@ -8,6 +8,7 @@ import {
   VEHICLE_CONDITIONS,
 } from '@/shared/api/enums';
 import { BODY_TYPES } from '@/shared/config/bodyTypes';
+import { MAX_KEYWORD_LENGTH, normalizeKeyword } from './keyword';
 import { MAX_MODEL_YEAR, MIN_MODEL_YEAR } from './listingLimits';
 import type { ListingSearchQuery } from './types';
 
@@ -15,6 +16,7 @@ export const LISTINGS_PAGE_SIZE = 20;
 
 /** Turkish URL parameter name for every filter; components never spell these out. */
 export const FILTER_PARAM_NAMES = {
+  q: 'q',
   brandId: 'marka',
   modelId: 'model',
   seriesId: 'seri',
@@ -44,6 +46,8 @@ const bodyTypeSlugs = BODY_TYPES.map((bodyType) => bodyType.slug) as [string, ..
 
 // Each URL value is parsed on its own so one bad value never discards the other filters
 const filterParsers = {
+  // A hand-edited URL may exceed the backend limit; cut it instead of letting the search fail
+  q: z.string().transform((keyword) => keyword.slice(0, MAX_KEYWORD_LENGTH).trim()),
   brandId: catalogId,
   modelId: catalogId,
   seriesId: catalogId,
@@ -128,6 +132,13 @@ export function toSearchParams(filters: ListingFilters): URLSearchParams {
   return params;
 }
 
+export const LISTINGS_PATH = '/ilanlar';
+
+export function buildListingsHref(filters: ListingFilters): string {
+  const query = toSearchParams(filters).toString();
+  return query ? `${LISTINGS_PATH}?${query}` : LISTINGS_PATH;
+}
+
 function toUrlValue(key: keyof ListingFilters, filters: ListingFilters): string | undefined {
   const value = filters[key];
   if (value === undefined || (key === 'page' && value === 1)) {
@@ -138,6 +149,9 @@ function toUrlValue(key: keyof ListingFilters, filters: ListingFilters): string 
   }
   if (key === 'hasDamageRecord') {
     return value ? 'var' : 'yok';
+  }
+  if (key === 'q') {
+    return normalizeKeyword(filters.q);
   }
   return String(value);
 }
@@ -164,8 +178,11 @@ export function buildPageHref(pathname: string, params: URLSearchParams, page: n
   return query ? `${pathname}?${query}` : pathname;
 }
 
+const NON_PANEL_KEYS: ReadonlyArray<keyof ListingFilters> = ['page', 'sort', 'q'];
+
+/** Counts the filters set in the filter panel; the keyword has its own search box. */
 export function countActiveFilters(filters: ListingFilters): number {
   return (Object.keys(filters) as Array<keyof ListingFilters>).filter(
-    (key) => key !== 'page' && key !== 'sort' && filters[key] !== undefined,
+    (key) => !NON_PANEL_KEYS.includes(key) && filters[key] !== undefined,
   ).length;
 }

@@ -1,14 +1,13 @@
 import { useSearchParams } from 'react-router-dom';
 import {
   applyFilterChange,
+  buildListingsHref,
   buildPageHref,
+  LISTINGS_PATH,
   parseListingFilters,
   toSearchParams,
   type FilterPatch,
-  type ListingFilters,
 } from '../searchParams';
-
-const LISTINGS_PATH = '/ilanlar';
 
 /** Filter state lives in the URL only, so results are shareable and Back works. */
 export function useListingFilters() {
@@ -18,18 +17,16 @@ export function useListingFilters() {
   const setFilters = (patch: FilterPatch) => {
     setSearchParams(toSearchParams(applyFilterChange(filters, patch)));
   };
-  const clearFilters = () => setSearchParams(new URLSearchParams());
+  // The filter panel's reset keeps the keyword: the search box is not part of the panel
+  const clearFilters = () => setSearchParams(toSearchParams({ q: filters.q, page: 1 }));
+  const clearAll = () => setSearchParams(new URLSearchParams());
 
   return {
     filters,
     setFilters,
     clearFilters,
-    hrefForFilters: (patch: FilterPatch) => hrefFor(applyFilterChange(filters, patch)),
+    clearAll,
+    hrefForFilters: (patch: FilterPatch) => buildListingsHref(applyFilterChange(filters, patch)),
     hrefForPage: (page: number) => buildPageHref(LISTINGS_PATH, toSearchParams(filters), page),
   };
-}
-
-function hrefFor(filters: ListingFilters): string {
-  const query = toSearchParams(filters).toString();
-  return query ? `${LISTINGS_PATH}?${query}` : LISTINGS_PATH;
 }
