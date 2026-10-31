@@ -29,6 +29,11 @@ Built with React 19, TypeScript (strict) and TanStack Query against a Spring Boo
   can publish listings; unverified users see a banner with a resend button.
 - **Password reset**: "forgot password" sends a one-time link, and the confirmation never reveals
   whether an address is registered.
+- **Moderation**: new and edited listings wait for admin approval. Owners see the review status
+  and, for a rejected listing, the reason they were given.
+- **Admin panel** (`/admin`, admins only): an approval queue filterable by status, a review page
+  to approve, reject or unpublish a listing with a written reason, a user list with e-mail search
+  and block/unblock, and catalog management for adding brands, models and series.
 
 ## Engineering highlights
 
@@ -56,7 +61,13 @@ not inflate its view count.
 
 **Concurrent edits.** Listing updates carry a version number. When the backend answers
 `409 Conflict`, the form explains that the listing changed elsewhere and offers to load the latest
-version instead of silently overwriting it.
+version instead of silently overwriting it. Admin decisions send the version that was reviewed
+too: if the owner edits the listing in the meantime, the review page reloads it and asks the admin
+to look again.
+
+**Roles are enforced by the backend.** The admin menu and routes are hidden from other users only
+for convenience; every admin endpoint is authorized on the server, and a `403` sends the user out
+of the admin section.
 
 **Contract-driven error handling.** Form field names match the backend's error keys
 (`vehicle.modelYear`, `imageUrls`), so server-side validation errors appear under the right field.
@@ -82,7 +93,7 @@ and support for reduced motion.
 
 ## Testing
 
-144 tests exercise the app through the UI like a user would, against MSW-mocked endpoints, rather
+172 tests exercise the app through the UI like a user would, against MSW-mocked endpoints, rather
 than testing implementation details. They cover:
 
 - token refresh races, multi-tab logout and session restore, including the rotated-token retry
@@ -96,6 +107,8 @@ than testing implementation details. They cover:
 - listing creation and editing, including `400`, `422` and `409` responses
 - owner-only actions and allowed status transitions
 - optimistic favorites with rollback, and a check that favoriting never triggers an extra detail request
+- the admin panel: access rules, approve/reject with the reviewed version and a `409` reload,
+  required reject reasons, block confirmation, and duplicate catalog names
 
 ```bash
 npm test
@@ -135,6 +148,7 @@ src/
     catalog/    brands, models, series, cities, districts
     listings/   keyword search and filters, detail, listing form, owner actions
     favorites/  favorite toggle and favorites list
+    admin/      listing review, user management, catalog management
   pages/        route components (lazy-loaded)
   shared/       HTTP client, error parsing, UI components, formatting
   test/         MSW server, fixtures, render helpers
@@ -143,4 +157,3 @@ src/
 ## Roadmap
 
 - SMS verification of phone numbers
-- Admin moderation of new listings
