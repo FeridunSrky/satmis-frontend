@@ -12,4 +12,3 @@ export const MAX_ENGINE_POWER = 2000;
 export const MAX_ENGINE_CAPACITY = 10_000;
 export const MIN_IMAGES = 1;
 export const MAX_IMAGES = 20;
-export const IMAGE_URL_MAX_LENGTH = 500;

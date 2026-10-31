@@ -1,4 +1,5 @@
 import type { Path } from 'react-hook-form';
+import type { ExistingImage } from '../hooks/useListingImages';
 import type { ListingDetail, ListingRequest } from '../types';
 import type { ListingFormInput, ListingFormOutput } from './listingFormSchema';
 
@@ -27,11 +28,11 @@ export const EMPTY_LISTING_FORM: ListingFormInput = {
     hasDamageRecord: false,
     exchangeable: false,
   },
-  imageUrls: [{ url: '' }],
+  imageIds: [],
 };
 
 /**
- * Form field names equal the backend `errors` keys (`vehicle.modelYear`, `imageUrls`…),
+ * Form field names equal the backend `errors` keys (`vehicle.modelYear`, `imageIds`…),
  * so server validation errors land on the right field without extra mapping.
  */
 export const LISTING_FORM_FIELDS: ReadonlyArray<Path<ListingFormInput>> = [
@@ -54,12 +55,12 @@ export const LISTING_FORM_FIELDS: ReadonlyArray<Path<ListingFormInput>> = [
   'vehicle.fromWho',
   'vehicle.hasDamageRecord',
   'vehicle.exchangeable',
-  'imageUrls',
+  'imageIds',
 ];
 
 export function toListingRequest(values: ListingFormOutput): ListingRequest {
-  const { brandId: _brandId, modelId: _modelId, cityId: _cityId, imageUrls, ...request } = values;
-  return { ...request, imageUrls: imageUrls.map((image) => image.url) };
+  const { brandId: _brandId, modelId: _modelId, cityId: _cityId, ...request } = values;
+  return request;
 }
 
 const toText = (value: number | string | null) => (value === null ? '' : String(value));
@@ -91,8 +92,13 @@ export function toListingFormValues(listing: ListingDetail): ListingFormInput {
       hasDamageRecord: vehicle.hasDamageRecord,
       exchangeable: vehicle.exchangeable,
     },
-    imageUrls: [...listing.images]
-      .sort((first, second) => first.displayOrder - second.displayOrder)
-      .map((image) => ({ url: image.url })),
+    imageIds: toExistingImages(listing).map((image) => image.id),
   };
+}
+
+/** The listing's images in display order, the cover first. */
+export function toExistingImages(listing: ListingDetail): ExistingImage[] {
+  return [...listing.images]
+    .sort((first, second) => first.displayOrder - second.displayOrder)
+    .map(({ id, url }) => ({ id, url }));
 }

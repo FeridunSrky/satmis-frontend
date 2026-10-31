@@ -106,7 +106,30 @@ export interface ListingRequest {
   currency: CurrencyType;
   districtId: number;
   vehicle: ListingVehicleRequest;
-  imageUrls: string[];
+  /** Display order; the first image is the cover. */
+  imageIds: number[];
+}
+
+export type ImageContentType = 'image/jpeg' | 'image/png' | 'image/webp';
+
+export interface ImageUploadRequest {
+  contentType: ImageContentType;
+  /** Exact size of the blob that will be PUT; the storage signature covers it. */
+  sizeBytes: number;
+}
+
+export interface ImageUpload {
+  id: number;
+  /** Signed storage URL, not an API URL; it must never be logged. */
+  uploadUrl: string;
+  /** Must be sent on the PUT unchanged and without any other header. */
+  uploadHeaders: Record<string, string>;
+  expiresAt: string;
+}
+
+export interface UploadedImage {
+  id: number;
+  url: string;
 }
 
 export interface ChangeStatusRequest {

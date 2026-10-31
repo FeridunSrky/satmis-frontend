@@ -2,7 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/features/auth/authStore';
 import { ListingForm } from '@/features/listings/form/ListingForm';
-import { toListingFormValues } from '@/features/listings/form/listingFormMapping';
+import { toExistingImages, toListingFormValues } from '@/features/listings/form/listingFormMapping';
 import { useListing } from '@/features/listings/hooks/useListingQueries';
 import { useUpdateListing } from '@/features/listings/hooks/useListingMutations';
 import { parseListingId } from '@/features/listings/listingId';
@@ -80,6 +80,7 @@ export function EditListingPage() {
         <ListingForm
           key={listing.version}
           defaultValues={toListingFormValues(listing)}
+          initialImages={toExistingImages(listing)}
           submitLabel="Değişiklikleri kaydet"
           onSubmit={handleSubmit}
           onReloadLatest={() => listingQuery.refetch()}

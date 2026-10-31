@@ -32,7 +32,14 @@ export type ApiError =
     };
 
 /** Error codes the frontend reacts to; the backend omits `code` for every other error. */
-export type ApiErrorCode = 'PHONE_REQUIRED' | 'EMAIL_NOT_VERIFIED' | 'REFRESH_TOKEN_ROTATED';
+export type ApiErrorCode =
+  | 'PHONE_REQUIRED'
+  | 'EMAIL_NOT_VERIFIED'
+  | 'REFRESH_TOKEN_ROTATED'
+  | 'IMAGE_LIMIT_REACHED'
+  | 'IMAGE_NOT_UPLOADED'
+  | 'IMAGE_INVALID'
+  | 'IMAGE_NOT_AVAILABLE';
 
 /** Listing creation is refused because the user's profile has no phone number. */
 export const PHONE_REQUIRED_CODE: ApiErrorCode = 'PHONE_REQUIRED';
@@ -40,6 +47,12 @@ export const PHONE_REQUIRED_CODE: ApiErrorCode = 'PHONE_REQUIRED';
 export const EMAIL_NOT_VERIFIED_CODE: ApiErrorCode = 'EMAIL_NOT_VERIFIED';
 /** A 401 on refresh because another tab rotated the cookie moments ago; the session is still valid. */
 export const REFRESH_TOKEN_ROTATED_CODE: ApiErrorCode = 'REFRESH_TOKEN_ROTATED';
+/** `complete` found no file in storage: the PUT never happened or failed. */
+export const IMAGE_NOT_UPLOADED_CODE: ApiErrorCode = 'IMAGE_NOT_UPLOADED';
+/** The stored file is not the declared image type or size; its id is no longer usable. */
+export const IMAGE_INVALID_CODE: ApiErrorCode = 'IMAGE_INVALID';
+/** A listing save referenced an image that is gone, unfinished or not the user's. */
+export const IMAGE_NOT_AVAILABLE_CODE: ApiErrorCode = 'IMAGE_NOT_AVAILABLE';
 
 export function toApiError(error: unknown): ApiError {
   if (!axios.isAxiosError(error) || !error.response) {
