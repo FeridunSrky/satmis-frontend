@@ -1,8 +1,11 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 import { useAuthStore } from '@/features/auth/authStore';
 import { server } from './server';
+
+// Pages are lazy-loaded; on a cold run the first import can exceed the default 1 s wait
+configure({ asyncUtilTimeout: 3000 });
 
 beforeAll(() => {
   server.listen({ onUnhandledFrame: 'error' });
