@@ -22,12 +22,14 @@ const MARK_SOLD: StatusAction = {
   successMessage: 'İlan satıldı olarak işaretlendi',
 };
 
-// Only the transitions the backend allows; anything else would come back as 422
+// Only the transitions the backend allows; anything else would come back as 422.
+// Listings awaiting or failing approval leave those states through admin review or an edit only.
 const ALLOWED_ACTIONS: Record<ListingStatus, StatusAction[]> = {
   PENDING_APPROVAL: [],
   ACTIVE: [UNPUBLISH, MARK_SOLD],
   PASSIVE: [PUBLISH, MARK_SOLD],
   SOLD: [],
+  REJECTED: [],
 };
 
 export function getStatusActions(status: ListingStatus): StatusAction[] {

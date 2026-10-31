@@ -67,6 +67,8 @@ export interface ListingDetail {
   price: number;
   currency: CurrencyType;
   status: ListingStatus;
+  /** Filled only while `status` is REJECTED; shown to the owner as plain text. */
+  rejectionReason: string | null;
   viewCount: number;
   favoriteCount: number;
   favoritedByMe: boolean;

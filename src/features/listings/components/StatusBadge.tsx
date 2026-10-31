@@ -3,10 +3,11 @@ import { LISTING_STATUS_LABELS } from '@/shared/config/vehicleLabels';
 import { cn } from '@/shared/lib/cn';
 
 const statusClassNames: Record<ListingStatus, string> = {
-  PENDING_APPROVAL: 'bg-lane/20 text-ink',
+  PENDING_APPROVAL: 'bg-brand-50 text-brand-700',
   ACTIVE: 'bg-success/10 text-success',
   PASSIVE: 'bg-ink/10 text-muted',
   SOLD: 'bg-asphalt text-white',
+  REJECTED: 'bg-danger-soft text-danger',
 };
 
 export function StatusBadge({ status }: { status: ListingStatus }) {

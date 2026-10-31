@@ -37,6 +37,7 @@ export function buildListingDetail(overrides: Partial<ListingDetail> = {}): List
     price: 650000,
     currency: 'TRY',
     status: 'ACTIVE',
+    rejectionReason: null,
     viewCount: 42,
     favoriteCount: 3,
     favoritedByMe: false,

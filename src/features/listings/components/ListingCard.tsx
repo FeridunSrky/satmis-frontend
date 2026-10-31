@@ -38,7 +38,15 @@ export function ListingCard({ listing, showStatus = false, actions }: ListingCar
         )}
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
-        {showStatus && <StatusBadge status={listing.status} />}
+        {showStatus && (
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge status={listing.status} />
+            {/* The summary has no reason; the detail page shows it */}
+            {listing.status === 'REJECTED' && (
+              <span className="text-xs text-danger">Nedenini görmek için tıklayın</span>
+            )}
+          </div>
+        )}
         <p className="font-display text-2xl font-bold text-brand-700">
           {formatPrice(listing.price, listing.currency)}
         </p>

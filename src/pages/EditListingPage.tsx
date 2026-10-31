@@ -1,6 +1,8 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/features/auth/authStore';
+import { updatedMessage } from '@/features/listings/approval';
+import { EditApprovalNotice } from '@/features/listings/components/EditApprovalNotice';
 import { ListingForm } from '@/features/listings/form/ListingForm';
 import { toExistingImages, toListingFormValues } from '@/features/listings/form/listingFormMapping';
 import { useListing } from '@/features/listings/hooks/useListingQueries';
@@ -66,8 +68,8 @@ export function EditListingPage() {
   }
 
   const handleSubmit = async (request: ListingRequest) => {
-    await updateListing.mutateAsync({ ...request, version: listing.version });
-    toast.success('İlan güncellendi');
+    const updated = await updateListing.mutateAsync({ ...request, version: listing.version });
+    toast.success(updatedMessage(listing.status, updated.status));
     navigate(`/ilan/${listing.id}`);
   };
 
@@ -75,6 +77,7 @@ export function EditListingPage() {
     <PageFrame>
       <h1 className="font-display text-4xl font-bold sm:text-5xl">İlanı düzenle</h1>
       <p className="mt-2 truncate text-muted">{listing.title}</p>
+      <EditApprovalNotice listing={listing} />
       <div className="mt-8">
         {/* A newer version from "Güncel hali yükle" remounts the form with fresh values */}
         <ListingForm

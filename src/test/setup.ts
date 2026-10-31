@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup, configure } from '@testing-library/react';
+import { toast } from 'sonner';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 import { useAuthStore } from '@/features/auth/authStore';
 import { server } from './server';
@@ -14,6 +15,8 @@ beforeAll(() => {
 });
 
 afterEach(() => {
+  // sonner replays undismissed toasts to every new Toaster, so they would leak into the next test
+  toast.dismiss();
   cleanup();
   server.resetHandlers();
   window.localStorage.clear();

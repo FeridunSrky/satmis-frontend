@@ -51,9 +51,10 @@ describe('CreateListingPage', () => {
     server.use(
       mockHttp.post(apiUrl('/listings'), async ({ request }) => {
         sentBody = await request.json();
-        return HttpResponse.json(buildListingDetail({ ...ownListingOverrides, id: 12 }), {
-          status: 201,
-        });
+        return HttpResponse.json(
+          buildListingDetail({ ...ownListingOverrides, id: 12, status: 'PENDING_APPROVAL' }),
+          { status: 201 },
+        );
       }),
     );
     const { router } = renderApp('/ilan-ver');

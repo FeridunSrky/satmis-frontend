@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { createdMessage } from '@/features/listings/approval';
 import { ListingForm } from '@/features/listings/form/ListingForm';
 import { EMPTY_LISTING_FORM } from '@/features/listings/form/listingFormMapping';
 import { useCreateListing } from '@/features/listings/hooks/useListingMutations';
@@ -11,7 +12,7 @@ export function CreateListingPage() {
 
   const handleSubmit = async (request: ListingRequest) => {
     const listing = await createListing.mutateAsync(request);
-    toast.success('İlanın yayında');
+    toast.success(createdMessage(listing.status));
     navigate(`/ilan/${listing.id}`);
   };
 
