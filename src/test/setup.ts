@@ -5,8 +5,8 @@ import { afterAll, afterEach, beforeAll } from 'vitest';
 import { useAuthStore } from '@/features/auth/authStore';
 import { server } from './server';
 
-// Pages are lazy-loaded; on a cold run the first import can exceed the default 1 s wait
-configure({ asyncUtilTimeout: 3000 });
+// Pages are lazy-loaded; on a cold run, or on a busy machine, the first import can take seconds
+configure({ asyncUtilTimeout: 8000 });
 
 beforeAll(() => {
   server.listen({ onUnhandledFrame: 'error' });
