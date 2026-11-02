@@ -29,7 +29,7 @@ export function useAdminListing(listingId: number | null) {
 }
 
 // A decision changes the queue, the reviewed detail and what the public sees
-function useInvalidateAfterReview() {
+export function useInvalidateAfterReview() {
   const queryClient = useQueryClient();
   return (listingId: number) =>
     Promise.all([

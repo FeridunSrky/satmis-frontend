@@ -2,31 +2,30 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { ListingDetail } from '@/features/listings/types';
-import { hasStatus, toApiError } from '@/shared/api/apiError';
 import { Button } from '@/shared/components/Button';
 import { FormAlert } from '@/shared/components/FormAlert';
-import { HTTP_CONFLICT, HTTP_UNPROCESSABLE, useAdminActionErrorHandler } from '../adminErrors';
 import { useApproveListing, useRejectListing } from '../hooks/useAdminListings';
+import { reasonFieldError, useDecisionErrors } from '../hooks/useDecisionErrors';
 import { RejectDialog } from './RejectDialog';
 
 const QUEUE_PATH = '/admin/ilanlar';
-const CHANGED_WHILE_REVIEWING =
-  'İlan siz incelerken değişti. Güncel hali yüklendi, lütfen tekrar inceleyin.';
 
-interface ReviewActionsProps {
-  listing: Pick<ListingDetail, 'id' | 'version' | 'status'>;
+export interface DecisionControls {
   /** True while the detail reloads; deciding then could send an outdated version. */
   isRefreshing: boolean;
   onReload: () => void;
 }
 
+interface ReviewActionsProps extends DecisionControls {
+  listing: Pick<ListingDetail, 'id' | 'version' | 'status'>;
+}
+
 export function ReviewActions({ listing, isRefreshing, onReload }: ReviewActionsProps) {
   const [isRejectOpen, setIsRejectOpen] = useState(false);
-  const [problem, setProblem] = useState<string>();
   const approve = useApproveListing();
   const reject = useRejectListing();
   const navigate = useNavigate();
-  const handleOtherError = useAdminActionErrorHandler();
+  const { problem, clearProblem, handleDecisionError } = useDecisionErrors(onReload);
   const isActive = listing.status === 'ACTIVE';
   const canDecide = listing.status === 'PENDING_APPROVAL' || isActive;
 
@@ -35,20 +34,8 @@ export function ReviewActions({ listing, isRefreshing, onReload }: ReviewActions
     void navigate(QUEUE_PATH);
   };
 
-  // 409 and 422 mean the detail on screen is outdated: reload it instead of retrying blindly
-  const handleDecisionError = (error: unknown) => {
-    if (hasStatus(error, HTTP_CONFLICT) || hasStatus(error, HTTP_UNPROCESSABLE)) {
-      setProblem(
-        hasStatus(error, HTTP_CONFLICT) ? CHANGED_WHILE_REVIEWING : toApiError(error).message,
-      );
-      onReload();
-      return;
-    }
-    handleOtherError(error);
-  };
-
   const handleApprove = async () => {
-    setProblem(undefined);
+    clearProblem();
     try {
       await approve.mutateAsync({ listingId: listing.id, version: listing.version });
       finish('İlan onaylandı');
@@ -58,17 +45,16 @@ export function ReviewActions({ listing, isRefreshing, onReload }: ReviewActions
   };
 
   const handleReject = async (reason: string): Promise<string | undefined> => {
-    setProblem(undefined);
+    clearProblem();
     try {
       await reject.mutateAsync({ listingId: listing.id, version: listing.version, reason });
       setIsRejectOpen(false);
       finish(isActive ? 'İlan yayından kaldırıldı' : 'İlan reddedildi');
       return undefined;
     } catch (error) {
-      const apiError = toApiError(error);
-      const reasonError = apiError.kind === 'http' ? apiError.fieldErrors.reason : undefined;
-      if (reasonError) {
-        return reasonError;
+      const fieldError = reasonFieldError(error);
+      if (fieldError) {
+        return fieldError;
       }
       setIsRejectOpen(false);
       handleDecisionError(error);

@@ -20,6 +20,20 @@ const ADMIN_PAGES: RouteObject[] = [
       })),
   },
   {
+    path: 'sikayetler',
+    lazy: () =>
+      import('@/pages/admin/AdminReportsPage').then((module) => ({
+        Component: module.AdminReportsPage,
+      })),
+  },
+  {
+    path: 'sikayetler/:listingId',
+    lazy: () =>
+      import('@/pages/admin/AdminReportReviewPage').then((module) => ({
+        Component: module.AdminReportReviewPage,
+      })),
+  },
+  {
     path: 'kullanicilar',
     lazy: () =>
       import('@/pages/admin/AdminUsersPage').then((module) => ({

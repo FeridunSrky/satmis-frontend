@@ -1,4 +1,5 @@
-import type { ListingStatus } from '@/shared/api/enums';
+import type { ListingSummary } from '@/features/listings/types';
+import type { ListingStatus, ReportReason, ReportStatus } from '@/shared/api/enums';
 import type { Role } from '@/shared/api/types';
 
 /** A user as the admin list returns it; `enabled: false` means blocked. */
@@ -42,4 +43,34 @@ export interface RejectListingRequest {
 
 export interface CatalogNameRequest {
   name: string;
+}
+
+/** A listing with open reports, as the report queue returns it. */
+export interface ReportedListing {
+  /** Its current state: a passive or hidden listing is still listed. */
+  listing: ListingSummary;
+  openReportCount: number;
+  /** Open reports per reason; reasons nobody chose are left out. */
+  reasons: Partial<Record<ReportReason, number>>;
+  /** ISO-8601 UTC. */
+  firstReportedAt: string;
+  /** ISO-8601 UTC. */
+  lastReportedAt: string;
+}
+
+export interface AdminListingReport {
+  id: number;
+  reason: ReportReason;
+  description: string | null;
+  status: ReportStatus;
+  reporter: { id: number; firstName: string; lastName: string; email: string };
+  /** ISO-8601 UTC. */
+  createdAt: string;
+  /** ISO-8601 UTC; null while the report is open. */
+  resolvedAt: string | null;
+}
+
+export interface PageRequest {
+  page: number;
+  size: number;
 }

@@ -22,6 +22,15 @@ export const BODY_TYPE_VALUES = [
 export const TRACTIONS = ['FWD', 'RWD', 'AWD'] as const;
 export const VEHICLE_CONDITIONS = ['NEW', 'USED'] as const;
 export const FROM_WHO_VALUES = ['OWNER', 'GALLERY', 'AUTHORIZED_DEALER'] as const;
+export const REPORT_REASONS = [
+  'FAKE_OR_MISLEADING',
+  'FRAUD_SUSPECTED',
+  'WRONG_INFO',
+  'INAPPROPRIATE_CONTENT',
+  'ALREADY_SOLD',
+  'OTHER',
+] as const;
+export const REPORT_STATUSES = ['OPEN', 'DISMISSED', 'ACTION_TAKEN'] as const;
 export const LISTING_SORTS = [
   'NEWEST',
   'OLDEST',
@@ -41,4 +50,6 @@ export type BodyType = (typeof BODY_TYPE_VALUES)[number];
 export type Traction = (typeof TRACTIONS)[number];
 export type VehicleCondition = (typeof VEHICLE_CONDITIONS)[number];
 export type FromWho = (typeof FROM_WHO_VALUES)[number];
+export type ReportReason = (typeof REPORT_REASONS)[number];
+export type ReportStatus = (typeof REPORT_STATUSES)[number];
 export type ListingSort = (typeof LISTING_SORTS)[number];

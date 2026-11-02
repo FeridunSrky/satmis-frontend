@@ -1,16 +1,16 @@
+import type { ReactNode } from 'react';
 import { RejectionReason } from '@/features/listings/components/ApprovalStatusNotice';
 import { StatusBadge } from '@/features/listings/components/StatusBadge';
 import type { ListingDetail } from '@/features/listings/types';
 import { formatDate, formatPhone, formatPrice } from '@/shared/lib/format';
-import { ReviewActions } from './ReviewActions';
 
 interface AdminReviewPanelProps {
   listing: ListingDetail;
-  isRefreshing: boolean;
-  onReload: () => void;
+  /** The decisions the current review offers, e.g. approve/reject or a report verdict. */
+  actions: ReactNode;
 }
 
-export function AdminReviewPanel({ listing, isRefreshing, onReload }: AdminReviewPanelProps) {
+export function AdminReviewPanel({ listing, actions }: AdminReviewPanelProps) {
   const { seller } = listing;
   return (
     <aside className="flex flex-col gap-5 rounded-2xl border border-line bg-paper p-6 lg:sticky lg:top-24">
@@ -52,7 +52,7 @@ export function AdminReviewPanel({ listing, isRefreshing, onReload }: AdminRevie
         </div>
       )}
 
-      <ReviewActions listing={listing} isRefreshing={isRefreshing} onReload={onReload} />
+      {actions}
     </aside>
   );
 }
