@@ -9,15 +9,26 @@ import { buildAuthResponse, buildErrorResponse, testUser } from '@/test/fixtures
 import { apiUrl, server } from '@/test/server';
 
 type RefreshAnswer =
-  'ok' | 'expired' | 'rotated' | 'rateLimited' | 'forbidden' | 'unavailable' | 'networkError';
+  | 'ok'
+  | 'expired'
+  | 'rotated'
+  | 'rateLimited'
+  | 'forbidden'
+  | 'serverError'
+  | 'unavailable'
+  | 'networkError';
 
 interface BackendCounters {
   refreshCalls: number;
   refreshBodies: string[];
+  /** Fake-clock time of each refresh request. */
+  refreshTimes: number[];
   meCalls: number;
 }
 
 const RATE_LIMIT_MESSAGE = 'Çok fazla deneme yaptınız, lütfen 60 saniye sonra tekrar deneyin';
+const FAKE_TIME_STEP_MS = 100;
+const FAKE_TIME_LIMIT_MS = 10_000;
 
 function refreshResponse(answer: RefreshAnswer): Response {
   switch (answer) {
@@ -42,6 +53,10 @@ function refreshResponse(answer: RefreshAnswer): Response {
       return HttpResponse.json(buildErrorResponse(403, 'İstek kaynağı doğrulanamadı'), {
         status: 403,
       });
+    case 'serverError':
+      return HttpResponse.json(buildErrorResponse(500, 'Beklenmeyen bir hata oluştu'), {
+        status: 500,
+      });
     case 'unavailable':
       return HttpResponse.json(buildErrorResponse(503, 'Depoya ulaşılamıyor'), { status: 503 });
     case 'networkError':
@@ -55,9 +70,15 @@ function mockBackend({
   refreshAnswers = [] as RefreshAnswer[],
   meAlwaysUnauthorized = false,
 } = {}) {
-  const counters: BackendCounters = { refreshCalls: 0, refreshBodies: [], meCalls: 0 };
+  const counters: BackendCounters = {
+    refreshCalls: 0,
+    refreshBodies: [],
+    refreshTimes: [],
+    meCalls: 0,
+  };
   server.use(
     mockHttp.post(apiUrl('/auth/refresh'), async ({ request }) => {
+      counters.refreshTimes.push(Date.now());
       counters.refreshBodies.push(await request.text());
       const answer = refreshAnswers[counters.refreshCalls] ?? 'ok';
       counters.refreshCalls += 1;
@@ -82,6 +103,42 @@ function expectSessionEnded(navigate: (path: string) => void) {
     accessToken: null,
   });
   expect(navigate).toHaveBeenCalledWith('/giris?next=%2Fprofil');
+}
+
+function expectSessionKept(navigate: (path: string) => void) {
+  expect(useAuthStore.getState()).toMatchObject({
+    status: 'authenticated',
+    accessToken: 'access-1',
+    user: testUser,
+  });
+  expect(navigate).not.toHaveBeenCalled();
+}
+
+// The retry after an unanswered refresh waits about 2 s; a fake clock skips that wait
+function useFakeClock() {
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+  onTestFinished(() => {
+    vi.useRealTimers();
+  });
+}
+
+// Small steps let the mocked requests settle in between, so each wait starts when it would for real
+async function settleWithFakeTime(request: Promise<unknown>): Promise<void> {
+  let settled = false;
+  const markSettled = () => {
+    settled = true;
+  };
+  void request.then(markSettled, markSettled);
+  for (
+    let elapsedMs = 0;
+    !settled && elapsedMs < FAKE_TIME_LIMIT_MS;
+    elapsedMs += FAKE_TIME_STEP_MS
+  ) {
+    await vi.advanceTimersByTimeAsync(FAKE_TIME_STEP_MS);
+  }
+  if (!settled) {
+    throw new Error(`Request still pending after ${FAKE_TIME_LIMIT_MS} ms of fake time`);
+  }
 }
 
 describe('http client session handling', () => {
@@ -183,20 +240,73 @@ describe('http client session handling', () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
-  it.each([
-    ['unavailable', { response: { status: 503 } }],
-    ['networkError', { code: 'ERR_NETWORK' }],
-  ] as const)('refresh%s_keepsSessionAndPassesTheFailureToTheCaller', async (answer, failure) => {
-    mockBackend({ refreshAnswers: [answer] });
+  it('refreshServerError_isNotRetriedAndKeepsSession', async () => {
+    const counters = mockBackend({ refreshAnswers: ['serverError', 'ok'] });
 
-    await expect(getCurrentUser()).rejects.toMatchObject(failure);
+    await expect(getCurrentUser()).rejects.toMatchObject({ response: { status: 500 } });
 
-    expect(useAuthStore.getState()).toMatchObject({
-      status: 'authenticated',
-      accessToken: 'access-1',
-      user: testUser,
+    expect(counters.refreshCalls).toBe(1);
+    expectSessionKept(navigate);
+  });
+
+  describe('when a refresh gets no answer from the backend', () => {
+    it('refreshNetworkErrorThenOk_retriesOnceAfterAboutTwoSecondsAndKeepsSession', async () => {
+      useFakeClock();
+      const counters = mockBackend({ refreshAnswers: ['networkError', 'ok'] });
+
+      const request = getCurrentUser();
+      await settleWithFakeTime(request);
+
+      await expect(request).resolves.toEqual(testUser);
+      expect(counters.refreshCalls).toBe(2);
+      const [firstAttemptAt = 0, retryAt = 0] = counters.refreshTimes;
+      // 2 s plus jitter: not at once, and well inside the backend's 30 s window for a rotated token
+      expect(retryAt - firstAttemptAt).toBeGreaterThanOrEqual(2000);
+      expect(retryAt - firstAttemptAt).toBeLessThan(5000);
+      expect(useAuthStore.getState().accessToken).toBe('access-2');
+      expect(navigate).not.toHaveBeenCalled();
     });
-    expect(navigate).not.toHaveBeenCalled();
+
+    it('refreshNetworkErrorThenRotatedTwice_endsSessionAfterThreeAttempts', async () => {
+      useFakeClock();
+      // The lost answer had rotated the cookie, so both later attempts still send the old one
+      const counters = mockBackend({
+        refreshAnswers: ['networkError', 'rotated', 'rotated', 'ok'],
+      });
+
+      const request = getCurrentUser();
+      await settleWithFakeTime(request);
+
+      await expect(request).rejects.toMatchObject({ response: { status: 401 } });
+      expect(counters.refreshCalls).toBe(3);
+      expectSessionEnded(navigate);
+    });
+
+    it('refreshRotatedThenNetworkError_stillGetsItsOneRetryForTheMissingAnswer', async () => {
+      useFakeClock();
+      const counters = mockBackend({ refreshAnswers: ['rotated', 'networkError', 'ok'] });
+
+      const request = getCurrentUser();
+      await settleWithFakeTime(request);
+
+      await expect(request).resolves.toEqual(testUser);
+      expect(counters.refreshCalls).toBe(3);
+    });
+
+    it.each([
+      ['unavailable', { response: { status: 503 } }],
+      ['networkError', { code: 'ERR_NETWORK' }],
+    ] as const)('refresh%sTwice_retriesOnlyOnceAndKeepsSession', async (answer, failure) => {
+      useFakeClock();
+      const counters = mockBackend({ refreshAnswers: [answer, answer, 'ok'] });
+
+      const request = getCurrentUser();
+      await settleWithFakeTime(request);
+
+      await expect(request).rejects.toMatchObject(failure);
+      expect(counters.refreshCalls).toBe(2);
+      expectSessionKept(navigate);
+    });
   });
 
   it('refresh_runsInsideTheCrossTabWebLock', async () => {

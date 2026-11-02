@@ -22,7 +22,7 @@ describe('bootstrapSession when the backend fails', () => {
 
     expect(await screen.findByText(SERVER_UNAVAILABLE_MESSAGE)).toBeInTheDocument();
     await waitFor(() => expect(useAuthStore.getState().status).toBe('anonymous'));
-    // A 500 may come after the backend already rotated the cookie, so it is not sent again
+    // A 500 is a fault in the backend itself, which a retry seconds later rarely fixes
     expect(refreshCalls).toBe(1);
   });
 });
