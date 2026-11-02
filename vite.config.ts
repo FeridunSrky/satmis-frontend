@@ -26,7 +26,8 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     css: false,
     restoreMocks: true,
-    // Full listing-form flows (fill, upload, confirm) take about 5 s when files run in parallel
-    testTimeout: 10_000,
+    // Full listing-form flows (fill, upload, confirm) take about 5 s when files run in parallel and
+    // over 10 s when the machine is busy; the limit only decides how long a broken test takes to fail
+    testTimeout: 30_000,
   },
 });
