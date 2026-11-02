@@ -4,14 +4,14 @@ import { expect } from 'vitest';
 
 export async function chooseOption(user: UserEvent, label: string, option: string) {
   // Catalog options arrive asynchronously, as they would for a real user. Label and text queries
-  // instead of role queries: computing accessible names over the whole form is several times slower
+  // instead of role queries: computing accessible names over the form made each step ~2x slower
   const select = screen.getByLabelText(label);
   await within(select).findByText(option);
   await user.selectOptions(select, option);
 }
 
-// Pasting instead of typing: every keystroke re-renders the whole form, and on a loaded machine
-// a key-by-key fill alone could use up most of the test timeout
+// Pasting instead of typing: user-event fires several events per character and waits for a timer
+// between characters, so on a loaded machine a key-by-key fill alone used up much of the timeout
 async function enterText(user: UserEvent, label: string, text: string) {
   await user.click(screen.getByLabelText(label));
   await user.paste(text);
