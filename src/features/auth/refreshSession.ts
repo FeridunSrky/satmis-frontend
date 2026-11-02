@@ -1,7 +1,7 @@
 import axios from 'axios';
 import {
   hasStatus,
-  HTTP_TOO_MANY_REQUESTS,
+  isTemporaryFailure,
   REFRESH_TOKEN_ROTATED_CODE,
   toApiError,
 } from '@/shared/api/apiError';
@@ -76,11 +76,7 @@ function isRotatedElsewhere(error: unknown): boolean {
   );
 }
 
-// A network failure or a rate limit says nothing about the session, so it is kept for the next try
+// Only an actual answer about the cookie ends the session; temporary failures keep it for a retry
 function isRejectedByServer(error: unknown): boolean {
-  return (
-    axios.isAxiosError(error) &&
-    error.response !== undefined &&
-    error.response.status !== HTTP_TOO_MANY_REQUESTS
-  );
+  return axios.isAxiosError(error) && !isTemporaryFailure(error);
 }
