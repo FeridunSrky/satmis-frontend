@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/features/auth/authStore';
-import { updatedMessage } from '@/features/listings/approval';
+import { editConfirm, needsReapproval, updatedMessage } from '@/features/listings/approval';
 import { EditApprovalNotice } from '@/features/listings/components/EditApprovalNotice';
 import { ListingForm } from '@/features/listings/form/ListingForm';
 import { toExistingImages, toListingFormValues } from '@/features/listings/form/listingFormMapping';
@@ -85,6 +85,7 @@ export function EditListingPage() {
           defaultValues={toListingFormValues(listing)}
           initialImages={toExistingImages(listing)}
           submitLabel="Değişiklikleri kaydet"
+          confirmCopy={(request) => editConfirm(needsReapproval(listing, request))}
           onSubmit={handleSubmit}
           onReloadLatest={() => listingQuery.refetch()}
         />

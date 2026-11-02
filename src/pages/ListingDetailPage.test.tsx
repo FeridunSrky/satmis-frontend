@@ -5,6 +5,7 @@ import { http as mockHttp, HttpResponse } from 'msw/http';
 import { describe, expect, it } from 'vitest';
 import { STALE_TIME_MS } from '@/app/queryClient';
 import type { ListingDetail } from '@/features/listings/types';
+import { confirmDialog } from '@/test/dialogHelpers';
 import { buildAuthResponse, buildErrorResponse, testUser } from '@/test/fixtures';
 import { buildListingDetail, OTHER_SELLER, ownListingOverrides } from '@/test/listingFixtures';
 import { currentPath, renderApp, signInAs, signOutCompletely } from '@/test/renderApp';
@@ -68,6 +69,7 @@ describe('ListingDetailPage', () => {
     const user = userEvent.setup();
 
     await user.click(await screen.findByRole('button', { name: 'Yayından kaldır' }));
+    await confirmDialog(user, 'Yayından kaldır');
 
     expect(await screen.findByRole('button', { name: 'Yayına al' })).toBeInTheDocument();
     expect(sentBody).toEqual({ status: 'PASSIVE' });

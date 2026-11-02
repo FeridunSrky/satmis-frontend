@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http as mockHttp, HttpResponse } from 'msw/http';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { ListingDetail } from '@/features/listings/types';
+import { confirmDialog } from '@/test/dialogHelpers';
 import { adminUser, buildErrorResponse } from '@/test/fixtures';
 import { buildListingDetail, buildListingSummary, buildPage } from '@/test/listingFixtures';
 import { currentPath, renderApp, signInAs } from '@/test/renderApp';
@@ -77,6 +78,7 @@ describe('admin listing review', () => {
 
     expect(await screen.findByText('Mehmet Kaya')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Onayla' }));
+    await confirmDialog(user, 'Onayla');
 
     await waitFor(() => expect(currentPath(router)).toBe('/admin/ilanlar'));
     expect(bodies).toEqual([{ version: 4 }]);
@@ -95,6 +97,7 @@ describe('admin listing review', () => {
     const user = userEvent.setup();
 
     await user.click(await screen.findByRole('button', { name: 'Onayla' }));
+    await confirmDialog(user, 'Onayla');
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'İlan siz incelerken değişti. Güncel hali yüklendi, lütfen tekrar inceleyin.',
@@ -106,6 +109,7 @@ describe('admin listing review', () => {
     expect(currentPath(router)).toBe('/admin/ilanlar/7');
 
     await user.click(screen.getByRole('button', { name: 'Onayla' }));
+    await confirmDialog(user, 'Onayla');
     await waitFor(() => expect(bodies).toEqual([{ version: 4 }, { version: 5 }]));
   });
 

@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http as mockHttp, HttpResponse } from 'msw/http';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { confirmDialog } from '@/test/dialogHelpers';
 import { buildErrorResponse } from '@/test/fixtures';
 import {
   createBrokenPhoto,
@@ -145,6 +146,7 @@ describe('ListingForm images: order and removal', () => {
     await user.click(screen.getByRole('button', { name: '3. görseli kapak yap' }));
     await user.click(screen.getByRole('button', { name: '2. görseli sağa taşı' }));
     await user.click(screen.getByRole('button', { name: PUBLISH }));
+    await confirmDialog(user, 'Gönder');
 
     await waitFor(() => expect(sentBodies).toHaveLength(1));
     expect(sentBodies[0]?.imageIds).toEqual([idC, idB, idA]);
@@ -202,6 +204,7 @@ describe('ListingForm images: order and removal', () => {
     await pickPhotos(user, [photoA()]);
     await waitForUploadsToSettle();
     await user.click(screen.getByRole('button', { name: SAVE_EDIT }));
+    await confirmDialog(user, /^Kaydet/);
 
     await waitFor(() => expect(sentImageIds).toEqual([2, 101]));
     expect(log.deletes).toEqual([]);
@@ -313,6 +316,7 @@ describe('ListingForm images: failures', () => {
     await waitForUploadsToSettle();
 
     await user.click(screen.getByRole('button', { name: PUBLISH }));
+    await confirmDialog(user, 'Gönder');
 
     const section = screen.getByRole('group', { name: 'Görseller' });
     expect(

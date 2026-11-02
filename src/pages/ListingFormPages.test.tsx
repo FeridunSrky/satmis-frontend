@@ -2,6 +2,7 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { http as mockHttp, HttpResponse } from 'msw/http';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { confirmDialog } from '@/test/dialogHelpers';
 import { buildErrorResponse, testUser } from '@/test/fixtures';
 import { createTestPhoto, installImageFakes, mockImageBackend } from '@/test/imageMocks';
 import { buildListingDetail, mockCatalog, ownListingOverrides } from '@/test/listingFixtures';
@@ -38,6 +39,7 @@ describe('CreateListingPage', () => {
     const user = userEvent.setup();
 
     await user.click(await screen.findByRole('button', { name: 'İlanı yayınla' }));
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
 
     expect(await screen.findByText('Başlık en az 5 karakter olmalıdır')).toBeInTheDocument();
     expect(screen.getByText('Marka seçin')).toBeInTheDocument();
@@ -63,6 +65,7 @@ describe('CreateListingPage', () => {
 
     await fillValidListing(user);
     await user.click(screen.getByRole('button', { name: 'İlanı yayınla' }));
+    await confirmDialog(user, 'Gönder');
 
     await waitFor(() => expect(currentPath(router)).toBe('/ilan/12'));
     expect(sentBody).toEqual({
@@ -104,6 +107,7 @@ describe('CreateListingPage', () => {
 
     await fillValidListing(user);
     await user.click(screen.getByRole('button', { name: 'İlanı yayınla' }));
+    await confirmDialog(user, 'Gönder');
 
     expect(await screen.findByText('Model yılı seri ile uyumsuz')).toBeInTheDocument();
     expect(screen.getByLabelText('Model yılı')).toHaveAttribute('aria-invalid', 'true');
@@ -124,6 +128,7 @@ describe('CreateListingPage', () => {
 
     await fillValidListing(user);
     await user.click(screen.getByRole('button', { name: 'İlanı yayınla' }));
+    await confirmDialog(user, 'Gönder');
 
     expect(await screen.findByText('Seçilen seri bu modele ait değil')).toBeInTheDocument();
   });
@@ -156,6 +161,7 @@ describe('CreateListingPage without a phone', () => {
 
     await fillValidListing(user);
     await user.click(screen.getByRole('button', { name: 'İlanı yayınla' }));
+    await confirmDialog(user, 'Gönder');
 
     await waitFor(() => expect(currentPath(router)).toBe('/profil'));
     expect(
@@ -195,6 +201,7 @@ describe('CreateListingPage with an unverified e-mail', () => {
 
     await fillValidListing(user);
     await user.click(screen.getByRole('button', { name: 'İlanı yayınla' }));
+    await confirmDialog(user, 'Gönder');
 
     expect(
       await screen.findByText(/İlan vermek için e-posta adresini doğrula/),
@@ -248,6 +255,7 @@ describe('EditListingPage', () => {
     expect(await screen.findByLabelText('Başlık')).toHaveValue('Eski başlık burada');
     await screen.findByRole('option', { name: '1.0 TCe' });
     await user.click(screen.getByRole('button', { name: 'Değişiklikleri kaydet' }));
+    await confirmDialog(user, /^Kaydet/);
 
     expect(await screen.findByText(/İlan başka bir yerde güncellendi/)).toBeInTheDocument();
     expect(sentVersion).toBe(1);

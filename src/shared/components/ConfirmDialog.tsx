@@ -1,35 +1,50 @@
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Button } from './Button';
 
-interface ConfirmDialogProps {
-  isOpen: boolean;
+/** The text of one confirmation; kept next to the action it belongs to, not in components. */
+export interface ConfirmCopy {
   title: string;
   description: string;
   confirmLabel: string;
+  /** Danger for actions that hide, delete or block; primary for the rest. */
+  tone?: 'danger' | 'primary';
+}
+
+interface ConfirmDialogProps extends ConfirmCopy {
+  isOpen: boolean;
   isConfirming?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export function ConfirmDialog({
-  isOpen,
+export function ConfirmDialog({ isOpen, ...dialogProps }: ConfirmDialogProps) {
+  // Mounting per opening resets the double-click guard and remembers the opener for each use
+  return isOpen ? <OpenConfirmDialog {...dialogProps} /> : null;
+}
+
+function OpenConfirmDialog({
   title,
   description,
   confirmLabel,
+  tone = 'danger',
   isConfirming = false,
   onConfirm,
   onCancel,
-}: ConfirmDialogProps) {
+}: Omit<ConfirmDialogProps, 'isOpen'>) {
   const titleId = useId();
   const descriptionId = useId();
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  // The mutation's pending flag arrives a render late; this blocks a second click before it does
+  const [hasConfirmed, setHasConfirmed] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-    // Focus the safe choice first so Enter never deletes by accident
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    // Focus the safe choice first so Enter never confirms by accident
     cancelButtonRef.current?.focus();
+    return () => opener?.focus();
+  }, []);
+
+  useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onCancel();
@@ -37,11 +52,16 @@ export function ConfirmDialog({
     };
     document.addEventListener('keydown', closeOnEscape);
     return () => document.removeEventListener('keydown', closeOnEscape);
-  }, [isOpen, onCancel]);
+  }, [onCancel]);
 
-  if (!isOpen) {
-    return null;
-  }
+  const confirm = () => {
+    if (hasConfirmed) {
+      return;
+    }
+    setHasConfirmed(true);
+    onConfirm();
+  };
+  const isBusy = isConfirming || hasConfirmed;
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-asphalt/60 p-4">
@@ -62,8 +82,8 @@ export function ConfirmDialog({
           <Button ref={cancelButtonRef} variant="secondary" onClick={onCancel}>
             Vazgeç
           </Button>
-          <Button variant="danger" onClick={onConfirm} disabled={isConfirming}>
-            {isConfirming ? 'Gönderiliyor...' : confirmLabel}
+          <Button variant={tone} onClick={confirm} disabled={isBusy}>
+            {isBusy ? 'Gönderiliyor...' : confirmLabel}
           </Button>
         </div>
       </div>
