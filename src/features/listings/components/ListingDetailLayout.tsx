@@ -5,7 +5,8 @@ import { ListingGallery } from './ListingGallery';
 import { ListingSpecs } from './ListingSpecs';
 
 interface ListingDetailLayoutProps {
-  listing: ListingDetail;
+  /** Only what the layout shows, so a sold vehicle's detail fits too. */
+  listing: Pick<ListingDetail, 'title' | 'description' | 'images' | 'vehicle'>;
   /** The public page shows price and contact here; the admin review shows its decisions. */
   aside: ReactNode;
   className?: string;

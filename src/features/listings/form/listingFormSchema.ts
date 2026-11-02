@@ -76,7 +76,7 @@ function optionalText(label: string, maxLength: number) {
     .transform((value) => (value === '' ? undefined : value));
 }
 
-const priceSchema = z
+export const priceSchema = z
   .string()
   .trim()
   .min(1, 'Fiyat zorunludur')

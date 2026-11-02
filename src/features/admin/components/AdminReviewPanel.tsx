@@ -3,6 +3,7 @@ import { RejectionReason } from '@/features/listings/components/ApprovalStatusNo
 import { StatusBadge } from '@/features/listings/components/StatusBadge';
 import type { ListingDetail } from '@/features/listings/types';
 import { formatDate, formatPhone, formatPrice } from '@/shared/lib/format';
+import { AdminSaleSection } from './AdminSaleSection';
 
 interface AdminReviewPanelProps {
   listing: ListingDetail;
@@ -51,6 +52,8 @@ export function AdminReviewPanel({ listing, actions }: AdminReviewPanelProps) {
           <RejectionReason reason={listing.rejectionReason} />
         </div>
       )}
+
+      <AdminSaleSection listing={listing} />
 
       {actions}
     </aside>

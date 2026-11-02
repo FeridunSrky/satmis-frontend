@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FilterPanel } from '@/features/listings/components/filters/FilterPanel';
+import { FilterSidebar } from '@/features/listings/components/filters/FilterSidebar';
 import { ListingCard } from '@/features/listings/components/ListingCard';
 import { ListingResults } from '@/features/listings/components/ListingResults';
 import { ListingsEmptyState } from '@/features/listings/components/ListingsEmptyState';
@@ -10,7 +9,6 @@ import { useListingFilters } from '@/features/listings/hooks/useListingFilters';
 import { useListingSearch } from '@/features/listings/hooks/useListingQueries';
 import { countActiveFilters, toListingSearchQuery } from '@/features/listings/searchParams';
 import { toApiError } from '@/shared/api/apiError';
-import { Button } from '@/shared/components/Button';
 import { BODY_TYPES, findBodyTypeByValue } from '@/shared/config/bodyTypes';
 import { cn } from '@/shared/lib/cn';
 import { formatNumber } from '@/shared/lib/format';
@@ -38,7 +36,6 @@ export function ListingsPage() {
   const { filters, setFilters, clearFilters, clearAll, hrefForFilters, hrefForPage } =
     useListingFilters();
   const searchQuery = useListingSearch(toListingSearchQuery(filters));
-  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const activeFilterCount = countActiveFilters(filters);
   const selectedBodyType = findBodyTypeByValue(filters.bodyType);
 
@@ -84,31 +81,7 @@ export function ListingsPage() {
       </nav>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[18rem_1fr] lg:items-start">
-        <div>
-          <Button
-            variant="secondary"
-            fullWidth
-            className="lg:hidden"
-            aria-expanded={isFilterPanelOpen}
-            aria-controls="listing-filters"
-            onClick={() => setIsFilterPanelOpen((open) => !open)}
-          >
-            {isFilterPanelOpen ? 'Filtreleri gizle' : 'Filtreler'}
-            {activeFilterCount > 0 && ` (${activeFilterCount})`}
-          </Button>
-          <section
-            id="listing-filters"
-            aria-label="Filtreler"
-            className={cn('mt-4 lg:mt-0 lg:block', !isFilterPanelOpen && 'hidden')}
-          >
-            <FilterPanel
-              filters={filters}
-              onChange={setFilters}
-              activeFilterCount={activeFilterCount}
-              onClear={clearFilters}
-            />
-          </section>
-        </div>
+        <FilterSidebar filters={filters} onChange={setFilters} onClear={clearFilters} />
 
         <section aria-label="Arama sonuçları" className="min-w-0">
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

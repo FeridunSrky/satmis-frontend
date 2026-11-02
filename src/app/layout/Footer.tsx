@@ -15,6 +15,9 @@ export function Footer() {
           <Link to="/ilanlar" className="hover:text-white">
             Satılık Araçlar
           </Link>
+          <Link to="/satilmis-araclar" className="hover:text-white">
+            Satılmış Araçlar
+          </Link>
           <Link to="/kayit" className="hover:text-white">
             Hesap oluştur
           </Link>

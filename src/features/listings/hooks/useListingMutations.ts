@@ -1,13 +1,15 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ListingStatus } from '@/shared/api/enums';
 import {
+  cancelListingSale,
   changeListingStatus,
   createListing,
   deleteListing,
+  markListingSold,
   updateListing,
 } from '../api/listingsApi';
 import { invalidateListingLists, listingKeys } from '../listingKeys';
-import type { ListingDetail, ListingRequest } from '../types';
+import type { ListingDetail, ListingRequest, MarkSoldRequest } from '../types';
 
 function useStoreUpdatedListing() {
   const queryClient = useQueryClient();
@@ -37,6 +39,19 @@ export function useChangeListingStatus() {
       changeListingStatus(listingId, status),
     onSuccess: storeListing,
   });
+}
+
+export function useMarkListingSold(listingId: number) {
+  const storeListing = useStoreUpdatedListing();
+  return useMutation({
+    mutationFn: (request: MarkSoldRequest) => markListingSold(listingId, request),
+    onSuccess: storeListing,
+  });
+}
+
+export function useCancelListingSale() {
+  const storeListing = useStoreUpdatedListing();
+  return useMutation({ mutationFn: cancelListingSale, onSuccess: storeListing });
 }
 
 export function useDeleteListing() {

@@ -39,7 +39,8 @@ export type ApiErrorCode =
   | 'IMAGE_LIMIT_REACHED'
   | 'IMAGE_NOT_UPLOADED'
   | 'IMAGE_INVALID'
-  | 'IMAGE_NOT_AVAILABLE';
+  | 'IMAGE_NOT_AVAILABLE'
+  | 'SALE_PRICE_OUT_OF_RANGE';
 
 /** Listing creation is refused because the user's profile has no phone number. */
 export const PHONE_REQUIRED_CODE: ApiErrorCode = 'PHONE_REQUIRED';
@@ -53,6 +54,8 @@ export const IMAGE_NOT_UPLOADED_CODE: ApiErrorCode = 'IMAGE_NOT_UPLOADED';
 export const IMAGE_INVALID_CODE: ApiErrorCode = 'IMAGE_INVALID';
 /** A listing save referenced an image that is gone, unfinished or not the user's. */
 export const IMAGE_NOT_AVAILABLE_CODE: ApiErrorCode = 'IMAGE_NOT_AVAILABLE';
+/** The sale price is outside 80–110 % of the listing price; `message` states the range. */
+export const SALE_PRICE_OUT_OF_RANGE_CODE: ApiErrorCode = 'SALE_PRICE_OUT_OF_RANGE';
 
 export function toApiError(error: unknown): ApiError {
   if (!axios.isAxiosError(error) || !error.response) {

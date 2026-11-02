@@ -44,14 +44,20 @@ describe('ListingDetailPage', () => {
     );
   });
 
-  it('ownerOfSoldListing_cannotEditOrChangeStatus', async () => {
+  it('ownerOfSoldListing_cannotEditDeleteOrChangeStatus_onlyRelist', async () => {
     signInAs(1);
     mockDetail(buildListingDetail({ ...ownListingOverrides, status: 'SOLD' }));
     renderApp('/ilan/7');
 
-    expect(await screen.findByRole('button', { name: 'Sil' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Tekrar yayına al' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Sil' })).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Satılmış ilan silinemez; önce tekrar yayına alın.'),
+    ).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Düzenle' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Yayın|Satıldı olarak/ })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /Yayından|Satıldı olarak/ }),
+    ).not.toBeInTheDocument();
   });
 
   it('ownerChangesStatus_sendsPatchAndShowsNewBadge', async () => {

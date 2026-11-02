@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from './Button';
 
 /** The text of one confirmation; kept next to the action it belongs to, not in components. */
@@ -63,14 +64,15 @@ function OpenConfirmDialog({
   };
   const isBusy = isConfirming || hasConfirmed;
 
-  return (
+  // In body, so a sticky or transformed ancestor cannot trap it under the sticky header
+  return createPortal(
     <div className="fixed inset-0 z-50 grid place-items-center bg-asphalt/60 p-4">
       <div
         role="alertdialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descriptionId}
-        className="w-full max-w-md rounded-2xl bg-paper p-6 shadow-xl"
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-paper p-6 shadow-xl"
       >
         <h2 id={titleId} className="font-display text-2xl font-bold">
           {title}
@@ -87,6 +89,7 @@ function OpenConfirmDialog({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

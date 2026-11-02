@@ -22,3 +22,11 @@ export function catalogAddConfirm(name: string): ConfirmCopy {
     tone: 'primary',
   };
 }
+
+export const HIDE_SALE_CONFIRM: ConfirmCopy = {
+  title: 'Satış gizlensin mi?',
+  description:
+    'Bu satış satılmış araçlar sayfasından kaldırılacak. İlan satılmış olarak kalır. Geri alınamaz.',
+  confirmLabel: 'Satışı gizle',
+  tone: 'danger',
+};

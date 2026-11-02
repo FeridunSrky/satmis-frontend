@@ -4,6 +4,7 @@ import { ListingDetailLayout } from '@/features/listings/components/ListingDetai
 import { ListingSidePanel } from '@/features/listings/components/ListingSidePanel';
 import { useListing } from '@/features/listings/hooks/useListingQueries';
 import { parseListingId } from '@/features/listings/listingId';
+import { SaleInfoCard } from '@/features/listings/sale/SaleInfoCard';
 import { hasStatus, toApiError } from '@/shared/api/apiError';
 import { Button, ButtonLink } from '@/shared/components/Button';
 import { FullPageLoader } from '@/shared/components/FullPageLoader';
@@ -41,6 +42,8 @@ export function ListingDetailPage() {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
       <ApprovalStatusNotice listing={listing} />
+      {/* Only the owner (or an admin) is ever served a SOLD listing here */}
+      <SaleInfoCard listing={listing} className="mb-8" />
       <ListingDetailLayout
         listing={listing}
         aside={<ListingSidePanel listing={listing} />}

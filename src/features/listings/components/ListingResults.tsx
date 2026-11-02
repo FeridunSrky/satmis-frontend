@@ -13,6 +13,7 @@ interface ListingResultsProps<TItem extends { id: number }> {
   hrefForPage: (page: number) => string;
   renderCard: (item: TItem) => ReactNode;
   empty: ReactNode;
+  errorTitle?: string;
 }
 
 /** Loading, error, empty and paginated grid states shared by every listing list. */
@@ -22,17 +23,14 @@ export function ListingResults<TItem extends { id: number }>({
   hrefForPage,
   renderCard,
   empty,
+  errorTitle = 'İlanlar yüklenemedi',
 }: ListingResultsProps<TItem>) {
   if (query.isPending) {
     return <ListingGridSkeleton />;
   }
   if (query.isError) {
     return (
-      <StateMessage
-        tone="error"
-        title="İlanlar yüklenemedi"
-        description={toApiError(query.error).message}
-      >
+      <StateMessage tone="error" title={errorTitle} description={toApiError(query.error).message}>
         <Button variant="secondary" onClick={() => void query.refetch()}>
           Tekrar dene
         </Button>

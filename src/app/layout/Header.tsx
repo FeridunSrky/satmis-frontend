@@ -26,6 +26,9 @@ export function Header() {
           <NavLink to="/ilanlar" className={navLinkClassName}>
             İlanlar
           </NavLink>
+          <NavLink to="/satilmis-araclar" className={navLinkClassName}>
+            Satılmış Araçlar
+          </NavLink>
           {user?.role === 'ADMIN' && (
             <NavLink to="/admin" className={navLinkClassName}>
               Yönetim
