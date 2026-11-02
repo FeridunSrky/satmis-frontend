@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { Button } from '@/shared/components/Button';
 import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { useAdminActionErrorHandler } from '../adminErrors';
+import { UNBLOCK_CONFIRM } from '../confirmations';
 import { useBlockUser, useUnblockUser } from '../hooks/useAdminUsers';
 import type { AdminUser } from '../types';
 
@@ -38,14 +39,29 @@ export function UserStatusAction({ user }: UserStatusActionProps) {
       toast.success('Kullanıcının engeli kaldırıldı');
     } catch (error) {
       handleError(error);
+    } finally {
+      setIsConfirmOpen(false);
     }
   };
 
   if (!user.enabled) {
     return (
-      <Button variant="secondary" disabled={unblock.isPending} onClick={() => void handleUnblock()}>
-        Engeli kaldır
-      </Button>
+      <>
+        <Button
+          variant="secondary"
+          disabled={unblock.isPending}
+          onClick={() => setIsConfirmOpen(true)}
+        >
+          Engeli kaldır
+        </Button>
+        <ConfirmDialog
+          isOpen={isConfirmOpen}
+          {...UNBLOCK_CONFIRM}
+          isConfirming={unblock.isPending}
+          onConfirm={() => void handleUnblock()}
+          onCancel={() => setIsConfirmOpen(false)}
+        />
+      </>
     );
   }
   return (

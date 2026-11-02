@@ -4,6 +4,7 @@ import { http as mockHttp, HttpResponse } from 'msw/http';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ListingStatus } from '@/shared/api/enums';
 import type { ListingDetail } from '@/features/listings/types';
+import { confirmDialog } from '@/test/dialogHelpers';
 import { createTestPhoto, installImageFakes, mockImageBackend } from '@/test/imageMocks';
 import {
   buildListingDetail,
@@ -49,6 +50,7 @@ async function saveEditForm() {
   const user = userEvent.setup();
   await screen.findByRole('option', { name: '1.0 TCe' });
   await user.click(screen.getByRole('button', { name: 'Değişiklikleri kaydet' }));
+  await confirmDialog(user, /^Kaydet/);
 }
 
 beforeEach(() => signInAs(1));
@@ -76,6 +78,7 @@ describe('creating a listing', () => {
     await screen.findByRole('img', { name: 'Görsel 1 (kapak)' });
     await waitForUploadsToSettle();
     await user.click(screen.getByRole('button', { name: 'İlanı yayınla' }));
+    await confirmDialog(user, 'Gönder');
 
     expect(
       await screen.findByText('İlanınız alındı, onaylandıktan sonra yayına girecek.'),

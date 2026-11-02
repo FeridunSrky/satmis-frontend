@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http as mockHttp, HttpResponse } from 'msw/http';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CatalogItem } from '@/shared/api/types';
+import { confirmDialog } from '@/test/dialogHelpers';
 import { adminUser, buildErrorResponse } from '@/test/fixtures';
 import { currentPath, renderApp, signInAs } from '@/test/renderApp';
 import { apiUrl, server } from '@/test/server';
@@ -67,6 +68,7 @@ describe('admin catalog', () => {
 
     await user.type(column('Markalar').getByLabelText('Yeni marka'), '  Togg  ');
     await user.click(column('Markalar').getByRole('button', { name: 'Ekle' }));
+    await confirmDialog(user, 'Ekle');
 
     // The list refreshes first; selecting the new brand follows as a URL change
     const newBrand = await column('Markalar').findByRole('button', { name: 'Togg' });
@@ -84,6 +86,7 @@ describe('admin catalog', () => {
 
     await user.type(column('Markalar').getByLabelText('Yeni marka'), 'bmw');
     await user.click(column('Markalar').getByRole('button', { name: 'Ekle' }));
+    await confirmDialog(user, 'Ekle');
 
     const input = column('Markalar').getByLabelText('Yeni marka');
     await waitFor(() => expect(input).toHaveAccessibleDescription('Bu isimde bir marka zaten var'));

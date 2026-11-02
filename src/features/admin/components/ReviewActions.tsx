@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import type { ListingDetail } from '@/features/listings/types';
 import { Button } from '@/shared/components/Button';
+import { ConfirmDialog } from '@/shared/components/ConfirmDialog';
 import { FormAlert } from '@/shared/components/FormAlert';
+import { APPROVE_CONFIRM } from '../confirmations';
 import { useApproveListing, useRejectListing } from '../hooks/useAdminListings';
 import { reasonFieldError, useDecisionErrors } from '../hooks/useDecisionErrors';
 import { RejectDialog } from './RejectDialog';
@@ -21,7 +23,7 @@ interface ReviewActionsProps extends DecisionControls {
 }
 
 export function ReviewActions({ listing, isRefreshing, onReload }: ReviewActionsProps) {
-  const [isRejectOpen, setIsRejectOpen] = useState(false);
+  const [openDialog, setOpenDialog] = useState<'approve' | 'reject'>();
   const approve = useApproveListing();
   const reject = useRejectListing();
   const navigate = useNavigate();
@@ -41,6 +43,8 @@ export function ReviewActions({ listing, isRefreshing, onReload }: ReviewActions
       finish('İlan onaylandı');
     } catch (error) {
       handleDecisionError(error);
+    } finally {
+      setOpenDialog(undefined);
     }
   };
 
@@ -48,7 +52,7 @@ export function ReviewActions({ listing, isRefreshing, onReload }: ReviewActions
     clearProblem();
     try {
       await reject.mutateAsync({ listingId: listing.id, version: listing.version, reason });
-      setIsRejectOpen(false);
+      setOpenDialog(undefined);
       finish(isActive ? 'İlan yayından kaldırıldı' : 'İlan reddedildi');
       return undefined;
     } catch (error) {
@@ -56,7 +60,7 @@ export function ReviewActions({ listing, isRefreshing, onReload }: ReviewActions
       if (fieldError) {
         return fieldError;
       }
-      setIsRejectOpen(false);
+      setOpenDialog(undefined);
       handleDecisionError(error);
       return undefined;
     }
@@ -71,24 +75,31 @@ export function ReviewActions({ listing, isRefreshing, onReload }: ReviewActions
     <div className="flex flex-col gap-3">
       <FormAlert message={problem} />
       {isActive ? (
-        <Button variant="danger" disabled={isBusy} onClick={() => setIsRejectOpen(true)}>
+        <Button variant="danger" disabled={isBusy} onClick={() => setOpenDialog('reject')}>
           Yayından kaldır
         </Button>
       ) : (
         <>
-          <Button disabled={isBusy} onClick={() => void handleApprove()}>
+          <Button disabled={isBusy} onClick={() => setOpenDialog('approve')}>
             Onayla
           </Button>
-          <Button variant="danger" disabled={isBusy} onClick={() => setIsRejectOpen(true)}>
+          <Button variant="danger" disabled={isBusy} onClick={() => setOpenDialog('reject')}>
             Reddet
           </Button>
         </>
       )}
+      <ConfirmDialog
+        isOpen={openDialog === 'approve'}
+        {...APPROVE_CONFIRM}
+        isConfirming={approve.isPending}
+        onConfirm={() => void handleApprove()}
+        onCancel={() => setOpenDialog(undefined)}
+      />
       <RejectDialog
-        isOpen={isRejectOpen}
+        isOpen={openDialog === 'reject'}
         title={isActive ? 'İlanı yayından kaldır' : 'İlanı reddet'}
         submitLabel={isActive ? 'Yayından kaldır' : 'Reddet'}
-        onCancel={() => setIsRejectOpen(false)}
+        onCancel={() => setOpenDialog(undefined)}
         onSubmit={handleReject}
       />
     </div>

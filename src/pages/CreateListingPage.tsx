@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { createdMessage } from '@/features/listings/approval';
+import { CREATE_CONFIRM, createdMessage } from '@/features/listings/approval';
 import { ListingForm } from '@/features/listings/form/ListingForm';
 import { EMPTY_LISTING_FORM } from '@/features/listings/form/listingFormMapping';
 import { useCreateListing } from '@/features/listings/hooks/useListingMutations';
@@ -26,6 +26,7 @@ export function CreateListingPage() {
         <ListingForm
           defaultValues={EMPTY_LISTING_FORM}
           submitLabel="İlanı yayınla"
+          confirmCopy={() => CREATE_CONFIRM}
           onSubmit={handleSubmit}
         />
       </div>
