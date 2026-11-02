@@ -5,6 +5,8 @@ import type {
   GearType,
   ListingSort,
   ListingStatus,
+  ReportReason,
+  ReportStatus,
   Traction,
   VehicleCondition,
 } from '@/shared/api/enums';
@@ -53,6 +55,21 @@ export const FROM_WHO_LABELS: Record<FromWho, string> = {
   OWNER: 'Sahibinden',
   GALLERY: 'Galeriden',
   AUTHORIZED_DEALER: 'Yetkili bayiden',
+};
+
+export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
+  FAKE_OR_MISLEADING: 'Sahte veya yanıltıcı ilan',
+  FRAUD_SUSPECTED: 'Dolandırıcılık şüphesi',
+  WRONG_INFO: 'Yanlış bilgi (fiyat, km vb.)',
+  INAPPROPRIATE_CONTENT: 'Uygunsuz içerik',
+  ALREADY_SOLD: 'Araç satılmış',
+  OTHER: 'Diğer',
+};
+
+export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
+  OPEN: 'İnceleniyor',
+  DISMISSED: 'Reddedildi (işlem yapılmadı)',
+  ACTION_TAKEN: 'İlan kaldırıldı',
 };
 
 export const LISTING_SORT_LABELS: Record<ListingSort, string> = {

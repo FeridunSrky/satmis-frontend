@@ -3,6 +3,7 @@ import { cn } from '@/shared/lib/cn';
 
 const ADMIN_SECTIONS = [
   { to: '/admin/ilanlar', label: 'İlan onayı' },
+  { to: '/admin/sikayetler', label: 'Şikayetler' },
   { to: '/admin/kullanicilar', label: 'Kullanıcılar' },
   { to: '/admin/katalog', label: 'Katalog' },
 ] as const;

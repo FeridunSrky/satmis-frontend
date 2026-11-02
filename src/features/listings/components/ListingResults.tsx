@@ -5,25 +5,24 @@ import type { PageResponse } from '@/shared/api/types';
 import { Button } from '@/shared/components/Button';
 import { Pagination } from '@/shared/components/Pagination';
 import { StateMessage } from '@/shared/components/StateMessage';
-import type { ListingSummary } from '../types';
 
-interface ListingResultsProps {
-  query: UseQueryResult<PageResponse<ListingSummary>>;
+interface ListingResultsProps<TItem extends { id: number }> {
+  query: UseQueryResult<PageResponse<TItem>>;
   /** One-based. */
   page: number;
   hrefForPage: (page: number) => string;
-  renderCard: (listing: ListingSummary) => ReactNode;
+  renderCard: (item: TItem) => ReactNode;
   empty: ReactNode;
 }
 
 /** Loading, error, empty and paginated grid states shared by every listing list. */
-export function ListingResults({
+export function ListingResults<TItem extends { id: number }>({
   query,
   page,
   hrefForPage,
   renderCard,
   empty,
-}: ListingResultsProps) {
+}: ListingResultsProps<TItem>) {
   if (query.isPending) {
     return <ListingGridSkeleton />;
   }
@@ -46,9 +45,9 @@ export function ListingResults({
   return (
     <div aria-busy={query.isFetching}>
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {query.data.content.map((listing) => (
-          <li key={listing.id} className="flex">
-            {renderCard(listing)}
+        {query.data.content.map((item) => (
+          <li key={item.id} className="flex">
+            {renderCard(item)}
           </li>
         ))}
       </ul>

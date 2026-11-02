@@ -6,6 +6,8 @@ import type {
   GearType,
   ListingSort,
   ListingStatus,
+  ReportReason,
+  ReportStatus,
   Traction,
   VehicleCondition,
 } from '@/shared/api/enums';
@@ -162,4 +164,20 @@ export interface ListingSearchQuery {
   sort?: ListingSort;
   page: number;
   size: number;
+}
+
+export interface CreateReportRequest {
+  reason: ReportReason;
+  /** At most 1000 characters; required when `reason` is OTHER. */
+  description?: string;
+}
+
+export interface ListingReport {
+  id: number;
+  listingId: number;
+  reason: ReportReason;
+  description: string | null;
+  status: ReportStatus;
+  /** ISO-8601 UTC. */
+  createdAt: string;
 }

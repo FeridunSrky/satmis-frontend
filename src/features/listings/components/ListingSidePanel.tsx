@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/authStore';
 import { FavoriteButton } from '@/features/favorites/components/FavoriteButton';
 import { formatDate, formatNumber, formatPrice } from '@/shared/lib/format';
+import { ReportListingButton } from '../report/ReportListingButton';
 import type { ListingDetail } from '../types';
 import { OwnerActions } from './OwnerActions';
 import { SellerPhone } from './SellerPhone';
@@ -46,6 +47,8 @@ export function ListingSidePanel({ listing }: { listing: ListingDetail }) {
           </dd>
         </div>
       </dl>
+
+      {!isOwner && <ReportListingButton listingId={listing.id} />}
 
       <FavoriteButton
         listingId={listing.id}
