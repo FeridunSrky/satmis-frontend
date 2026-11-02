@@ -1,5 +1,4 @@
 import type { QueryClient } from '@tanstack/react-query';
-import axios from 'axios';
 import { toast } from 'sonner';
 import { registerAuthHandlers } from '@/shared/api/http';
 import { buildLoginPath } from '@/shared/lib/safeRedirect';
@@ -19,10 +18,6 @@ export function installAuth({ queryClient, navigate, getCurrentPath }: InstallAu
     getAccessToken: () => useAuthStore.getState().accessToken,
     refreshSession,
     onSessionExpired: (refreshError) => {
-      // Offline is not a logout: keep the session and let the request fail visibly
-      if (isNetworkError(refreshError)) {
-        return;
-      }
       useAuthStore.getState().clearSession();
       queryClient.clear();
       if (isOriginRejected(refreshError)) {
@@ -41,8 +36,4 @@ export function installAuth({ queryClient, navigate, getCurrentPath }: InstallAu
       queryClient.clear();
     }
   });
-}
-
-function isNetworkError(error: unknown): boolean {
-  return axios.isAxiosError(error) && error.response === undefined;
 }

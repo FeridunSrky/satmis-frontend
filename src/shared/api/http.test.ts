@@ -8,7 +8,8 @@ import { getCurrentUser } from '@/features/user/api/userApi';
 import { buildAuthResponse, buildErrorResponse, testUser } from '@/test/fixtures';
 import { apiUrl, server } from '@/test/server';
 
-type RefreshAnswer = 'ok' | 'expired' | 'rotated' | 'rateLimited' | 'forbidden';
+type RefreshAnswer =
+  'ok' | 'expired' | 'rotated' | 'rateLimited' | 'forbidden' | 'unavailable' | 'networkError';
 
 interface BackendCounters {
   refreshCalls: number;
@@ -41,6 +42,10 @@ function refreshResponse(answer: RefreshAnswer): Response {
       return HttpResponse.json(buildErrorResponse(403, 'İstek kaynağı doğrulanamadı'), {
         status: 403,
       });
+    case 'unavailable':
+      return HttpResponse.json(buildErrorResponse(503, 'Depoya ulaşılamıyor'), { status: 503 });
+    case 'networkError':
+      return HttpResponse.error();
   }
 }
 
@@ -169,6 +174,22 @@ describe('http client session handling', () => {
     mockBackend({ refreshAnswers: ['rateLimited'] });
 
     await expect(getCurrentUser()).rejects.toMatchObject({ response: { status: 429 } });
+
+    expect(useAuthStore.getState()).toMatchObject({
+      status: 'authenticated',
+      accessToken: 'access-1',
+      user: testUser,
+    });
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['unavailable', { response: { status: 503 } }],
+    ['networkError', { code: 'ERR_NETWORK' }],
+  ] as const)('refresh%s_keepsSessionAndPassesTheFailureToTheCaller', async (answer, failure) => {
+    mockBackend({ refreshAnswers: [answer] });
+
+    await expect(getCurrentUser()).rejects.toMatchObject(failure);
 
     expect(useAuthStore.getState()).toMatchObject({
       status: 'authenticated',

@@ -1,5 +1,5 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
-import { hasStatus, HTTP_TOO_MANY_REQUESTS } from './apiError';
+import { isTemporaryFailure } from './apiError';
 
 const API_BASE_URL = '/api';
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -53,8 +53,9 @@ http.interceptors.response.use(undefined, async (error: unknown) => {
   try {
     await authHandlers.refreshSession();
   } catch (refreshError) {
-    // A throttled refresh says nothing about the session; the caller shows the 429 message
-    if (hasStatus(refreshError, HTTP_TOO_MANY_REQUESTS)) {
+    // An unreachable, throttled or failing server says nothing about the session; the caller
+    // shows that error instead of the user being logged out
+    if (isTemporaryFailure(refreshError)) {
       throw refreshError;
     }
     authHandlers.onSessionExpired(refreshError);

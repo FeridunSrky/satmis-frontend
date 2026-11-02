@@ -5,6 +5,7 @@ export const NETWORK_ERROR_MESSAGE = 'Sunucuya ulaşılamıyor, lütfen tekrar d
 const UNEXPECTED_ERROR_MESSAGE = 'Beklenmeyen bir hata oluştu, lütfen tekrar deneyin';
 
 export const HTTP_TOO_MANY_REQUESTS = 429;
+const HTTP_SERVER_ERROR_MIN = 500;
 
 // Parsed defensively: the backend is developed in parallel and may not match the contract yet
 const errorBodySchema = z.object({
@@ -72,6 +73,20 @@ export function toApiError(error: unknown): ApiError {
     fieldErrors: body.errors ?? {},
     ...(retryAfter.success && { retryAfterSeconds: retryAfter.data }),
   };
+}
+
+/**
+ * The server could not answer right now (unreachable, throttled or failing). Such an answer says
+ * nothing about the request itself, e.g. a refresh failing this way does not end the session.
+ */
+export function isTemporaryFailure(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) {
+    return false;
+  }
+  const status = error.response?.status;
+  return (
+    status === undefined || status === HTTP_TOO_MANY_REQUESTS || status >= HTTP_SERVER_ERROR_MIN
+  );
 }
 
 export function hasStatus(error: unknown, status: number): boolean {
