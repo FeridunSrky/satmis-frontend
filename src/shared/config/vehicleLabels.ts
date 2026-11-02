@@ -7,6 +7,7 @@ import type {
   ListingStatus,
   ReportReason,
   ReportStatus,
+  SoldVehicleSort,
   Traction,
   VehicleCondition,
 } from '@/shared/api/enums';
@@ -70,6 +71,17 @@ export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
   OPEN: 'İnceleniyor',
   DISMISSED: 'Reddedildi (işlem yapılmadı)',
   ACTION_TAKEN: 'İlan kaldırıldı',
+};
+
+export const SOLD_VEHICLE_SORT_LABELS: Record<SoldVehicleSort, string> = {
+  NEWEST: 'En yeni satış',
+  OLDEST: 'En eski satış',
+  PRICE_ASC: 'Satış fiyatı: düşükten yükseğe',
+  PRICE_DESC: 'Satış fiyatı: yüksekten düşüğe',
+  YEAR_DESC: 'Model yılı: yeniden eskiye',
+  YEAR_ASC: 'Model yılı: eskiden yeniye',
+  KM_ASC: 'Kilometre: azdan çoğa',
+  KM_DESC: 'Kilometre: çoktan aza',
 };
 
 export const LISTING_SORT_LABELS: Record<ListingSort, string> = {

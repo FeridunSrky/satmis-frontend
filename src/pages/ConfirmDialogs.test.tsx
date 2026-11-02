@@ -69,15 +69,13 @@ describe('owner status actions', () => {
     renderApp('/ilan/7');
     const user = userEvent.setup();
 
-    await user.click(await screen.findByRole('button', { name: 'Satıldı olarak işaretle' }));
-    const dialog = screen.getByRole('alertdialog', {
-      name: 'İlan satıldı olarak işaretlensin mi?',
-    });
-    await user.dblClick(within(dialog).getByRole('button', { name: 'Satıldı olarak işaretle' }));
+    await user.click(await screen.findByRole('button', { name: 'Yayından kaldır' }));
+    const dialog = screen.getByRole('alertdialog', { name: 'İlan yayından kaldırılsın mı?' });
+    await user.dblClick(within(dialog).getByRole('button', { name: 'Yayından kaldır' }));
 
     expect(within(dialog).getByRole('button', { name: 'Gönderiliyor...' })).toBeDisabled();
     await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
-    expect(bodies).toEqual([{ status: 'SOLD' }]);
+    expect(bodies).toEqual([{ status: 'PASSIVE' }]);
   });
 
   it('escape_closesDialog_andReturnsFocusToOpener', async () => {

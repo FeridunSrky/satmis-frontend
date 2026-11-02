@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import {
   applyFilterChange,
-  buildListingsHref,
+  buildFiltersHref,
   buildPageHref,
   LISTINGS_PATH,
   parseListingFilters,
@@ -9,8 +9,11 @@ import {
   type FilterPatch,
 } from '../searchParams';
 
-/** Filter state lives in the URL only, so results are shareable and Back works. */
-export function useListingFilters() {
+/**
+ * Filter state lives in the URL only, so results are shareable and Back works.
+ * `pathname` is the page the filters belong to (the listing search or the sold vehicles).
+ */
+export function useListingFilters(pathname: string = LISTINGS_PATH) {
   const [searchParams, setSearchParams] = useSearchParams();
   const filters = parseListingFilters(searchParams);
 
@@ -26,7 +29,8 @@ export function useListingFilters() {
     setFilters,
     clearFilters,
     clearAll,
-    hrefForFilters: (patch: FilterPatch) => buildListingsHref(applyFilterChange(filters, patch)),
-    hrefForPage: (page: number) => buildPageHref(LISTINGS_PATH, toSearchParams(filters), page),
+    hrefForFilters: (patch: FilterPatch) =>
+      buildFiltersHref(pathname, applyFilterChange(filters, patch)),
+    hrefForPage: (page: number) => buildPageHref(pathname, toSearchParams(filters), page),
   };
 }

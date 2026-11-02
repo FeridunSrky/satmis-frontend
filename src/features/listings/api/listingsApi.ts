@@ -8,6 +8,7 @@ import type {
   ListingRequest,
   ListingSearchQuery,
   ListingSummary,
+  MarkSoldRequest,
 } from '../types';
 
 export interface PageQuery {
@@ -51,6 +52,20 @@ export async function changeListingStatus(
 ): Promise<ListingDetail> {
   const request: ChangeStatusRequest = { status };
   const response = await http.patch<ListingDetail>(`/listings/${listingId}/status`, request);
+  return response.data;
+}
+
+export async function markListingSold(
+  listingId: number,
+  request: MarkSoldRequest,
+): Promise<ListingDetail> {
+  const response = await http.post<ListingDetail>(`/listings/${listingId}/sale`, request);
+  return response.data;
+}
+
+/** Undoes the sale; the listing goes straight back to ACTIVE without another review. */
+export async function cancelListingSale(listingId: number): Promise<ListingDetail> {
+  const response = await http.delete<ListingDetail>(`/listings/${listingId}/sale`);
   return response.data;
 }
 

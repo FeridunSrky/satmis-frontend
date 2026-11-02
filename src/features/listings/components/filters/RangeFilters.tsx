@@ -12,7 +12,11 @@ const RANGE_KEYS = ['minPrice', 'maxPrice', 'currency', 'minYear', 'maxYear', 'm
  * Typed values are applied together with one button instead of on every keystroke,
  * which would fire a search request per digit.
  */
-export function RangeFilters({ filters, onChange }: FilterGroupProps) {
+interface RangeFiltersProps extends FilterGroupProps {
+  priceLabel?: string;
+}
+
+export function RangeFilters({ filters, onChange, priceLabel = 'Fiyat' }: RangeFiltersProps) {
   // Remounting on URL change keeps the inputs in sync after "Filtreleri temizle" or Back
   const formKey = RANGE_KEYS.map((key) => filters[key] ?? '').join('|');
 
@@ -39,7 +43,7 @@ export function RangeFilters({ filters, onChange }: FilterGroupProps) {
       aria-label="Fiyat, yıl ve kilometre"
     >
       <fieldset className="grid grid-cols-2 gap-3">
-        <legend className="mb-3 font-display text-lg font-bold">Fiyat</legend>
+        <legend className="mb-3 font-display text-lg font-bold">{priceLabel}</legend>
         <TextField
           label="En az"
           name={FILTER_PARAM_NAMES.minPrice}

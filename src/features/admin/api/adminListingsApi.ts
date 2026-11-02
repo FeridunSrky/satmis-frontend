@@ -32,3 +32,9 @@ export async function rejectListing(
   const response = await http.post<ListingDetail>(`/admin/listings/${listingId}/reject`, request);
   return response.data;
 }
+
+/** Removes the sale from the sold vehicles page; the listing stays SOLD. Cannot be undone. */
+export async function hideSoldVehicle(listingId: number): Promise<ListingDetail> {
+  const response = await http.post<ListingDetail>(`/admin/sold-vehicles/${listingId}/hide`);
+  return response.data;
+}

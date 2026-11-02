@@ -53,3 +53,8 @@ export type FromWho = (typeof FROM_WHO_VALUES)[number];
 export type ReportReason = (typeof REPORT_REASONS)[number];
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
 export type ListingSort = (typeof LISTING_SORTS)[number];
+/**
+ * Same values as ListingSort, so the search URL parsing is shared; on the sold vehicles page
+ * NEWEST/OLDEST order by sale date and PRICE_* by sale price.
+ */
+export type SoldVehicleSort = ListingSort;

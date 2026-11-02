@@ -35,6 +35,9 @@ export function MobileNav({ id, onNavigate }: MobileNavProps) {
         <NavLink to="/ilanlar" className={navLinkClassName} onClick={onNavigate}>
           İlanlar
         </NavLink>
+        <NavLink to="/satilmis-araclar" className={navLinkClassName} onClick={onNavigate}>
+          Satılmış Araçlar
+        </NavLink>
         {user?.role === 'ADMIN' && (
           <NavLink to="/admin" className={navLinkClassName} onClick={onNavigate}>
             Yönetim

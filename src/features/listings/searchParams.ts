@@ -134,9 +134,14 @@ export function toSearchParams(filters: ListingFilters): URLSearchParams {
 
 export const LISTINGS_PATH = '/ilanlar';
 
-export function buildListingsHref(filters: ListingFilters): string {
+/** The listing search and the sold vehicles page share these filters, each under its path. */
+export function buildFiltersHref(pathname: string, filters: ListingFilters): string {
   const query = toSearchParams(filters).toString();
-  return query ? `${LISTINGS_PATH}?${query}` : LISTINGS_PATH;
+  return query ? `${pathname}?${query}` : pathname;
+}
+
+export function buildListingsHref(filters: ListingFilters): string {
+  return buildFiltersHref(LISTINGS_PATH, filters);
 }
 
 function toUrlValue(key: keyof ListingFilters, filters: ListingFilters): string | undefined {

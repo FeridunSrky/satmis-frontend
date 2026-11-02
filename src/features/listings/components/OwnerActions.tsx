@@ -5,8 +5,20 @@ import type { ListingStatus } from '@/shared/api/enums';
 import { Button, ButtonLink } from '@/shared/components/Button';
 import { ConfirmDialog, type ConfirmCopy } from '@/shared/components/ConfirmDialog';
 import { cn } from '@/shared/lib/cn';
-import { useChangeListingStatus, useDeleteListing } from '../hooks/useListingMutations';
-import { canEditListing, getStatusActions, type StatusAction } from '../statusTransitions';
+import {
+  useCancelListingSale,
+  useChangeListingStatus,
+  useDeleteListing,
+} from '../hooks/useListingMutations';
+import { RELIST_CONFIRM, RELISTED_MESSAGE, SOLD_NOT_DELETABLE_HINT } from '../sale/saleCopy';
+import { SalePanel } from '../sale/SalePanel';
+import {
+  canDeleteListing,
+  canEditListing,
+  canMarkSold,
+  getStatusActions,
+  type StatusAction,
+} from '../statusTransitions';
 
 interface OwnerActionsProps {
   listing: { id: number; title: string; status: ListingStatus };
@@ -14,7 +26,8 @@ interface OwnerActionsProps {
   layout?: 'row' | 'stack';
 }
 
-type PendingAction = StatusAction | 'delete';
+/** The one action awaiting the owner's answer; 'sell' opens the sale panel instead. */
+type PendingAction = StatusAction | 'delete' | 'relist' | 'sell';
 
 function deleteCopy(title: string): ConfirmCopy {
   return {
@@ -26,45 +39,53 @@ function deleteCopy(title: string): ConfirmCopy {
 }
 
 function isStatusAction(action: PendingAction | null): action is StatusAction {
-  return action !== null && action !== 'delete';
+  return typeof action === 'object' && action !== null;
 }
 
 export function OwnerActions({ listing, onDeleted, layout = 'row' }: OwnerActionsProps) {
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const changeStatus = useChangeListingStatus();
+  const cancelSale = useCancelListingSale();
   const deleteListing = useDeleteListing();
-  const isBusy = changeStatus.isPending || deleteListing.isPending;
+  const isBusy = changeStatus.isPending || cancelSale.isPending || deleteListing.isPending;
+  const close = () => setPendingAction(null);
 
-  const handleStatusChange = async (action: StatusAction) => {
+  // Every confirmed action ends the same way: dialog closed, success or error toast
+  const run = async (action: () => Promise<unknown>, successMessage: string) => {
     try {
-      await changeStatus.mutateAsync({ listingId: listing.id, status: action.target });
-      toast.success(action.successMessage);
+      await action();
+      close();
+      toast.success(successMessage);
+      return true;
     } catch (error) {
+      close();
       toast.error(toApiError(error).message);
-    } finally {
-      setPendingAction(null);
+      return false;
     }
   };
 
-  const handleDelete = async () => {
-    try {
-      await deleteListing.mutateAsync(listing.id);
-      setPendingAction(null);
-      toast.success('İlan silindi');
-      onDeleted?.();
-    } catch (error) {
-      setPendingAction(null);
-      toast.error(toApiError(error).message);
-    }
-  };
-
-  const confirmPending = () => {
+  const confirmPending = async () => {
     if (isStatusAction(pendingAction)) {
-      void handleStatusChange(pendingAction);
+      const { target, successMessage } = pendingAction;
+      await run(
+        () => changeStatus.mutateAsync({ listingId: listing.id, status: target }),
+        successMessage,
+      );
+    } else if (pendingAction === 'relist') {
+      await run(() => cancelSale.mutateAsync(listing.id), RELISTED_MESSAGE);
     } else if (pendingAction === 'delete') {
-      void handleDelete();
+      const isDeleted = await run(() => deleteListing.mutateAsync(listing.id), 'İlan silindi');
+      if (isDeleted) {
+        onDeleted?.();
+      }
     }
   };
+
+  const confirmCopy = isStatusAction(pendingAction)
+    ? pendingAction.confirm
+    : pendingAction === 'relist'
+      ? RELIST_CONFIRM
+      : deleteCopy(listing.title);
 
   return (
     <div className={cn('flex flex-wrap gap-2', layout === 'stack' && 'flex-col')}>
@@ -83,21 +104,39 @@ export function OwnerActions({ listing, onDeleted, layout = 'row' }: OwnerAction
           {action.label}
         </Button>
       ))}
-      <Button
-        variant="ghost"
-        className="text-danger hover:bg-danger-soft"
-        disabled={isBusy}
-        onClick={() => setPendingAction('delete')}
-      >
-        Sil
-      </Button>
-      <ConfirmDialog
-        isOpen={pendingAction !== null}
-        {...(isStatusAction(pendingAction) ? pendingAction.confirm : deleteCopy(listing.title))}
-        isConfirming={isBusy}
-        onConfirm={confirmPending}
-        onCancel={() => setPendingAction(null)}
-      />
+      {canMarkSold(listing.status) && (
+        <Button variant="secondary" disabled={isBusy} onClick={() => setPendingAction('sell')}>
+          Satıldı olarak işaretle
+        </Button>
+      )}
+      {listing.status === 'SOLD' && (
+        <Button variant="secondary" disabled={isBusy} onClick={() => setPendingAction('relist')}>
+          Tekrar yayına al
+        </Button>
+      )}
+      {canDeleteListing(listing.status) ? (
+        <Button
+          variant="ghost"
+          className="text-danger hover:bg-danger-soft"
+          disabled={isBusy}
+          onClick={() => setPendingAction('delete')}
+        >
+          Sil
+        </Button>
+      ) : (
+        <p className="text-sm text-muted">{SOLD_NOT_DELETABLE_HINT}</p>
+      )}
+      {pendingAction === 'sell' ? (
+        <SalePanel listingId={listing.id} onClose={close} />
+      ) : (
+        <ConfirmDialog
+          isOpen={pendingAction !== null}
+          {...confirmCopy}
+          isConfirming={isBusy}
+          onConfirm={() => void confirmPending()}
+          onCancel={close}
+        />
+      )}
     </div>
   );
 }

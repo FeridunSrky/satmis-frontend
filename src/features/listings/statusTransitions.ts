@@ -31,24 +31,13 @@ const PUBLISH: StatusAction = {
     tone: 'primary',
   },
 };
-const MARK_SOLD: StatusAction = {
-  target: 'SOLD',
-  label: 'Satıldı olarak işaretle',
-  successMessage: 'İlan satıldı olarak işaretlendi',
-  confirm: {
-    title: 'İlan satıldı olarak işaretlensin mi?',
-    description: 'İlan yayından kalkacak.',
-    confirmLabel: 'Satıldı olarak işaretle',
-    tone: 'primary',
-  },
-};
-
-// Only the transitions the backend allows; anything else would come back as 422.
+// Only the PATCH transitions the backend allows; anything else would come back as 422.
 // Listings awaiting or failing approval leave those states through admin review or an edit only.
+// Selling carries a price, so it has its own endpoint (see canMarkSold) instead of a target here.
 const ALLOWED_ACTIONS: Record<ListingStatus, StatusAction[]> = {
   PENDING_APPROVAL: [],
-  ACTIVE: [UNPUBLISH, MARK_SOLD],
-  PASSIVE: [PUBLISH, MARK_SOLD],
+  ACTIVE: [UNPUBLISH],
+  PASSIVE: [PUBLISH],
   SOLD: [],
   REJECTED: [],
 };
@@ -57,7 +46,16 @@ export function getStatusActions(status: ListingStatus): StatusAction[] {
   return ALLOWED_ACTIONS[status];
 }
 
-/** A sold listing is final and can no longer be edited. */
+/** A sold listing can no longer be edited or deleted; undoing the sale comes first. */
 export function canEditListing(status: ListingStatus): boolean {
   return status !== 'SOLD';
+}
+
+export function canDeleteListing(status: ListingStatus): boolean {
+  return status !== 'SOLD';
+}
+
+/** Only published listings (live or paused) can be sold, through the sale panel. */
+export function canMarkSold(status: ListingStatus): boolean {
+  return status === 'ACTIVE' || status === 'PASSIVE';
 }

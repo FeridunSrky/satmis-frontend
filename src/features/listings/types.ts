@@ -71,6 +71,8 @@ export interface ListingDetail {
   status: ListingStatus;
   /** Filled only while `status` is REJECTED; shown to the owner as plain text. */
   rejectionReason: string | null;
+  /** Filled only while `status` is SOLD; only the owner and admins see a sold listing. */
+  sale: ListingSale | null;
   viewCount: number;
   favoriteCount: number;
   favoritedByMe: boolean;
@@ -81,6 +83,25 @@ export interface ListingDetail {
   location: { cityId: number; cityName: string; districtId: number; districtName: string };
   vehicle: ListingVehicle;
   images: ListingImage[];
+}
+
+export interface ListingSale {
+  /** In the listing's currency. */
+  salePrice: number;
+  note: string | null;
+  /** ISO-8601 UTC; when the server recorded the sale. */
+  soldAt: string;
+  /** True once an admin removed the sale from the sold vehicles page. */
+  hidden: boolean;
+}
+
+/** POST /api/listings/{id}/sale. */
+export interface MarkSoldRequest {
+  salePrice: number;
+  /** Trimmed by the backend; blank counts as no note. */
+  note?: string;
+  /** The detail's version; an outdated one is answered with 409. */
+  version: number;
 }
 
 export interface ListingVehicleRequest {

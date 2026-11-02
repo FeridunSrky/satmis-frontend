@@ -6,6 +6,7 @@ import {
   approveListing,
   getAdminListing,
   getAdminListings,
+  hideSoldVehicle,
   rejectListing,
 } from '../api/adminListingsApi';
 import { adminKeys } from '../adminKeys';
@@ -60,6 +61,14 @@ export function useRejectListing() {
       version: number;
       reason: string;
     }) => rejectListing(listingId, request),
+    onSuccess: (listing) => invalidate(listing.id),
+  });
+}
+
+export function useHideSoldVehicle() {
+  const invalidate = useInvalidateAfterReview();
+  return useMutation({
+    mutationFn: hideSoldVehicle,
     onSuccess: (listing) => invalidate(listing.id),
   });
 }
