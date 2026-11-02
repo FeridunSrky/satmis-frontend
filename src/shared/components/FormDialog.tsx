@@ -1,4 +1,5 @@
 import { useEffect, useEffectEvent, useId, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 interface FormDialogProps {
   isOpen: boolean;
@@ -45,7 +46,8 @@ export function FormDialog({ isOpen, title, description, onClose, children }: Fo
   if (!isOpen) {
     return null;
   }
-  return (
+  // In body, so a sticky or transformed ancestor cannot trap it under the sticky header
+  return createPortal(
     <div className="fixed inset-0 z-50 grid place-items-center bg-asphalt/60 p-4">
       {/* Rendered open rather than via showModal(): the backdrop and focus handling are ours */}
       <dialog
@@ -54,7 +56,7 @@ export function FormDialog({ isOpen, title, description, onClose, children }: Fo
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
-        className="static m-0 w-full max-w-lg rounded-2xl bg-paper p-6 text-ink shadow-xl"
+        className="static m-0 max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl bg-paper p-6 text-ink shadow-xl"
       >
         <h2 id={titleId} className="font-display text-2xl font-bold">
           {title}
@@ -66,7 +68,8 @@ export function FormDialog({ isOpen, title, description, onClose, children }: Fo
         )}
         <div className="mt-5">{children}</div>
       </dialog>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
