@@ -12,19 +12,40 @@ import { useAuthStore } from './authStore';
 const REFRESH_LOCK_NAME = 'satmis-refresh';
 const HTTP_UNAUTHORIZED = 401;
 const HTTP_FORBIDDEN = 403;
+const GATEWAY_STATUSES: ReadonlySet<number> = new Set([502, 503, 504]);
+// Spreads the retries of tabs that failed at the same moment
+const MAX_JITTER_RATIO = 0.5;
 
 /** Shown instead of the backend's 403 text, which is about request origins, not the user. */
 export const ORIGIN_REJECTED_MESSAGE = 'Oturum doğrulanamadı, lütfen tekrar giriş yapın.';
+
+/** One retry per delay when a refresh gets no answer from the backend itself. */
+export interface RefreshRetryPolicy {
+  unreachableRetryDelaysMs: readonly number[];
+}
+
+// If the backend rotated the cookie but its answer was lost, a retry within 30 s gets
+// REFRESH_TOKEN_ROTATED and ends only this session; a later one counts as theft and ends every
+// session of the user. So a mid-session refresh retries after ~2 s instead of on the next request
+const MID_SESSION_RETRY_POLICY: RefreshRetryPolicy = { unreachableRetryDelaysMs: [2000] };
+
+interface RetryBudget {
+  unreachableRetryDelaysMs: readonly number[];
+  rotatedRetryLeft: boolean;
+}
 
 let refreshInFlight: Promise<void> | null = null;
 
 /**
  * The backend rotates the refresh cookie and treats reuse of an old one as theft (it revokes every
- * session). So within a tab all callers share one request, and across tabs the Web Lock makes the
- * refreshes take turns, each sending the cookie the previous one left behind.
+ * session). So within a tab all callers share one refresh, retries included (a caller joining one
+ * in flight gets its retry policy), and across tabs the Web Lock makes the refreshes take turns,
+ * each sending the cookie the previous one left behind.
  */
-export function refreshSession(): Promise<void> {
-  refreshInFlight ??= withRefreshLock(rotateTokens).finally(() => {
+export function refreshSession(
+  retryPolicy: RefreshRetryPolicy = MID_SESSION_RETRY_POLICY,
+): Promise<void> {
+  refreshInFlight ??= withRefreshLock(() => rotateTokens(retryPolicy)).finally(() => {
     refreshInFlight = null;
   });
   return refreshInFlight;
@@ -42,9 +63,9 @@ function withRefreshLock(task: () => Promise<void>): Promise<void> {
   return task();
 }
 
-async function rotateTokens(): Promise<void> {
+async function rotateTokens(retryPolicy: RefreshRetryPolicy): Promise<void> {
   try {
-    const session = await refreshRetryingOnceIfRotated();
+    const session = await refreshWithinBudget({ ...retryPolicy, rotatedRetryLeft: true });
     useAuthStore.getState().setSession(session);
   } catch (error) {
     if (isRejectedByServer(error)) {
@@ -54,17 +75,33 @@ async function rotateTokens(): Promise<void> {
   }
 }
 
-// Exactly one retry: a second REFRESH_TOKEN_ROTATED is treated like any other rejection
-async function refreshRetryingOnceIfRotated(): Promise<AuthResponse> {
+// Unreachable retries and the rotated retry have separate budgets, spent in whatever order the
+// failures come, so the attempts stay bounded; a failure with no retry left is passed on
+async function refreshWithinBudget(budget: RetryBudget): Promise<AuthResponse> {
   try {
     return await refresh();
   } catch (error) {
-    if (!isRotatedElsewhere(error)) {
-      throw error;
+    const [delayMs, ...laterDelaysMs] = budget.unreachableRetryDelaysMs;
+    if (delayMs !== undefined && isUnreachable(error)) {
+      await wait(withJitter(delayMs));
+      return refreshWithinBudget({ ...budget, unreachableRetryDelaysMs: laterDelaysMs });
     }
-    // Another tab (or browser without Web Locks) won the race; the browser now holds its new cookie
-    return refresh();
+    if (budget.rotatedRetryLeft && isRotatedElsewhere(error)) {
+      // Usually another tab won the race and the browser now holds its new cookie. After a lost
+      // answer the cookie is unchanged, so this retry is refused too and the session ends
+      return refreshWithinBudget({ ...budget, rotatedRetryLeft: false });
+    }
+    throw error;
   }
+}
+
+// No answer at all, or a gateway's: the refresh code did not run, or it ran and the answer was lost
+function isUnreachable(error: unknown): boolean {
+  if (!axios.isAxiosError(error)) {
+    return false;
+  }
+  const status = error.response?.status;
+  return status === undefined || GATEWAY_STATUSES.has(status);
 }
 
 function isRotatedElsewhere(error: unknown): boolean {
@@ -79,4 +116,12 @@ function isRotatedElsewhere(error: unknown): boolean {
 // Only an actual answer about the cookie ends the session; temporary failures keep it for a retry
 function isRejectedByServer(error: unknown): boolean {
   return axios.isAxiosError(error) && !isTemporaryFailure(error);
+}
+
+function withJitter(delayMs: number): number {
+  return delayMs + Math.random() * delayMs * MAX_JITTER_RATIO;
+}
+
+function wait(delayMs: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, delayMs));
 }

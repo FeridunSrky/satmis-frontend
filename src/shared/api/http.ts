@@ -7,7 +7,7 @@ const HTTP_UNAUTHORIZED = 401;
 
 export interface AuthHandlers {
   getAccessToken: () => string | null;
-  /** Must be single-flight: concurrent callers share one refresh request. */
+  /** Must be single-flight: concurrent callers share one refresh, retries included. */
   refreshSession: () => Promise<void>;
   onSessionExpired: (refreshError: unknown) => void;
 }
