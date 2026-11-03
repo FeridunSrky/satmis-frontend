@@ -29,12 +29,13 @@ export function useAdminListing(listingId: number | null) {
   });
 }
 
-// A decision changes the queue, the reviewed detail and what the public sees
+// A decision changes the queue, its tab badge, the reviewed detail and what the public sees
 export function useInvalidateAfterReview() {
   const queryClient = useQueryClient();
   return (listingId: number) =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: adminKeys.listingQueues() }),
+      queryClient.invalidateQueries({ queryKey: adminKeys.moderationCounts() }),
       queryClient.invalidateQueries({ queryKey: adminKeys.listing(listingId) }),
       queryClient.invalidateQueries({ queryKey: listingKeys.detail(listingId) }),
       invalidateListingLists(queryClient),

@@ -20,6 +20,13 @@ const ADMIN_PAGES: RouteObject[] = [
       })),
   },
   {
+    path: 'yorumlar',
+    lazy: () =>
+      import('@/pages/admin/AdminCommentsPage').then((module) => ({
+        Component: module.AdminCommentsPage,
+      })),
+  },
+  {
     path: 'sikayetler',
     lazy: () =>
       import('@/pages/admin/AdminReportsPage').then((module) => ({
@@ -144,6 +151,13 @@ export const routes: RouteObject[] = [
             lazy: () =>
               import('@/pages/MyListingsPage').then((module) => ({
                 Component: module.MyListingsPage,
+              })),
+          },
+          {
+            path: 'yorumlarim',
+            lazy: () =>
+              import('@/pages/MyCommentsPage').then((module) => ({
+                Component: module.MyCommentsPage,
               })),
           },
           {

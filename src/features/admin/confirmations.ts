@@ -30,3 +30,10 @@ export const HIDE_SALE_CONFIRM: ConfirmCopy = {
   confirmLabel: 'Satışı gizle',
   tone: 'danger',
 };
+
+export const APPROVE_COMMENT_CONFIRM: ConfirmCopy = {
+  title: 'Yorum onaylansın mı?',
+  description: 'Yorum ilan sayfasında hemen herkese görünecek.',
+  confirmLabel: 'Onayla',
+  tone: 'primary',
+};

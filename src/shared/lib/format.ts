@@ -43,3 +43,15 @@ export function formatDate(isoTimestamp: string): string {
 export function formatDateTime(isoTimestamp: string): string {
   return dateTimeFormatter.format(new Date(isoTimestamp));
 }
+
+const BYTES_PER_KB = 1024;
+const BYTES_PER_MB = BYTES_PER_KB * 1024;
+const fileSizeFormatter = new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1 });
+
+/** 1_258_291 → "1,2 MB"; under a megabyte in KB, so a small scan does not read "0 MB". */
+export function formatFileSize(bytes: number): string {
+  if (bytes >= BYTES_PER_MB) {
+    return `${fileSizeFormatter.format(bytes / BYTES_PER_MB)} MB`;
+  }
+  return `${fileSizeFormatter.format(Math.max(1, Math.round(bytes / BYTES_PER_KB)))} KB`;
+}

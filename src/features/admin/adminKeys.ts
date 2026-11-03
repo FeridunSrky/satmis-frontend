@@ -1,4 +1,4 @@
-import type { AdminListingQuery, AdminUserQuery, PageRequest } from './types';
+import type { AdminCommentQuery, AdminListingQuery, AdminUserQuery, PageRequest } from './types';
 
 export const adminKeys = {
   all: ['admin'] as const,
@@ -13,4 +13,7 @@ export const adminKeys = {
     [...adminKeys.all, 'listingReports', listingId] as const,
   listingReports: (listingId: number, query: PageRequest) =>
     [...adminKeys.listingReportsAll(listingId), query] as const,
+  commentQueues: () => [...adminKeys.all, 'comments'] as const,
+  commentQueue: (query: AdminCommentQuery) => [...adminKeys.commentQueues(), query] as const,
+  moderationCounts: () => [...adminKeys.all, 'moderationCounts'] as const,
 };

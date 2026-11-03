@@ -41,7 +41,13 @@ export type ApiErrorCode =
   | 'IMAGE_NOT_UPLOADED'
   | 'IMAGE_INVALID'
   | 'IMAGE_NOT_AVAILABLE'
-  | 'SALE_PRICE_OUT_OF_RANGE';
+  | 'SALE_PRICE_OUT_OF_RANGE'
+  | 'COMMENT_LIMIT_REACHED'
+  | 'REPLY_LIMIT_REACHED'
+  | 'ATTACHMENT_LIMIT_REACHED'
+  | 'ATTACHMENT_NOT_UPLOADED'
+  | 'ATTACHMENT_INVALID'
+  | 'ATTACHMENT_NOT_AVAILABLE';
 
 /** Listing creation is refused because the user's profile has no phone number. */
 export const PHONE_REQUIRED_CODE: ApiErrorCode = 'PHONE_REQUIRED';
@@ -57,6 +63,16 @@ export const IMAGE_INVALID_CODE: ApiErrorCode = 'IMAGE_INVALID';
 export const IMAGE_NOT_AVAILABLE_CODE: ApiErrorCode = 'IMAGE_NOT_AVAILABLE';
 /** The sale price is outside 80–110 % of the listing price; `message` states the range. */
 export const SALE_PRICE_OUT_OF_RANGE_CODE: ApiErrorCode = 'SALE_PRICE_OUT_OF_RANGE';
+/** The user already used both comments allowed per listing; deleted and rejected ones count. */
+export const COMMENT_LIMIT_REACHED_CODE: ApiErrorCode = 'COMMENT_LIMIT_REACHED';
+/** The owner used both reply attempts on this comment. */
+export const REPLY_LIMIT_REACHED_CODE: ApiErrorCode = 'REPLY_LIMIT_REACHED';
+/** `complete` found no attachment file in storage: the PUT never happened or failed. */
+export const ATTACHMENT_NOT_UPLOADED_CODE: ApiErrorCode = 'ATTACHMENT_NOT_UPLOADED';
+/** The stored attachment is not the declared type or size; its id is no longer usable. */
+export const ATTACHMENT_INVALID_CODE: ApiErrorCode = 'ATTACHMENT_INVALID';
+/** A comment referenced an attachment that is gone, unfinished, foreign or already used. */
+export const ATTACHMENT_NOT_AVAILABLE_CODE: ApiErrorCode = 'ATTACHMENT_NOT_AVAILABLE';
 
 export function toApiError(error: unknown): ApiError {
   if (!axios.isAxiosError(error) || !error.response) {

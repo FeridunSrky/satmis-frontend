@@ -7,6 +7,7 @@ import { ButtonLink } from '@/shared/components/Button';
 import { FullPageLoader } from '@/shared/components/FullPageLoader';
 import { StateMessage } from '@/shared/components/StateMessage';
 import { HTTP_NOT_FOUND } from '../adminErrors';
+import { listingCommentsPath } from '../commentQueueParams';
 import { useAdminListing } from '../hooks/useAdminListings';
 import { AdminQueryError } from './AdminQueryError';
 import { AdminReviewPanel } from './AdminReviewPanel';
@@ -59,9 +60,17 @@ export function AdminListingReview({
   };
   return (
     <div>
-      <Link to={backPath} className="text-sm font-semibold text-brand-700 hover:underline">
-        ← Kuyruğa dön
-      </Link>
+      <div className="flex flex-wrap justify-between gap-3">
+        <Link to={backPath} className="text-sm font-semibold text-brand-700 hover:underline">
+          ← Kuyruğa dön
+        </Link>
+        <Link
+          to={listingCommentsPath(listingQuery.data.id)}
+          className="text-sm font-semibold text-brand-700 hover:underline"
+        >
+          Bu ilanın yorumları
+        </Link>
+      </div>
       <ListingDetailLayout
         listing={listingQuery.data}
         className="mt-4"
