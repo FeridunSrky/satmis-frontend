@@ -1,34 +1,40 @@
-import { IMAGE_NOT_UPLOADED_CODE, toApiError } from '@/shared/api/apiError';
+import { toApiError } from '@/shared/api/apiError';
 import { uploadToStorage } from '@/shared/api/uploadToStorage';
-import type { PreparedImage } from '@/shared/lib/prepareImage';
-import { completeImageUpload, requestImageUpload } from '../api/listingImagesApi';
-import type { ImageUpload, UploadedImage } from '../types';
+import type { ImageUpload } from '../types';
+import type { PreparedUpload, UploadedFile, UploadTarget } from './uploadTarget';
 
-interface ImageUploadSteps {
+interface ImageUploadSteps<TContentType extends string> {
   /** Memoised by the caller, so a retry does not re-encode the photo. */
-  prepare: () => Promise<PreparedImage>;
+  prepare: () => Promise<PreparedUpload<TContentType>>;
   onUploadStarted: () => void;
   onProgress: (fraction: number) => void;
-  /** The image id exists from here on; the caller must DELETE it if the upload is abandoned. */
-  onReserved: (imageId: number) => void;
+  /** The file id exists from here on; the caller must DELETE it if the upload is abandoned. */
+  onReserved: (fileId: number) => void;
   signal: AbortSignal;
 }
 
 /** One attempt: prepare → reserve → PUT to storage → complete. Every attempt gets a new URL. */
-export async function runImageUpload(steps: ImageUploadSteps): Promise<UploadedImage> {
+export async function runImageUpload<TContentType extends string>(
+  target: UploadTarget<TContentType>,
+  steps: ImageUploadSteps<TContentType>,
+): Promise<UploadedFile> {
   const { prepare, onUploadStarted, onReserved, signal } = steps;
   const { blob, contentType } = await prepare();
   signal.throwIfAborted();
   // The signature covers type and size, so they must describe the re-encoded blob exactly
-  const upload = await requestImageUpload({ contentType, sizeBytes: blob.size });
+  const upload = await target.reserve({ contentType, sizeBytes: blob.size });
   onReserved(upload.id);
   signal.throwIfAborted();
   onUploadStarted();
   await putToStorage(upload, blob, steps);
-  return completeRetryingPutOnce(upload, blob, steps);
+  return completeRetryingPutOnce(target, upload, blob, steps);
 }
 
-function putToStorage(upload: ImageUpload, blob: Blob, steps: ImageUploadSteps): Promise<void> {
+function putToStorage<TContentType extends string>(
+  upload: ImageUpload,
+  blob: Blob,
+  steps: ImageUploadSteps<TContentType>,
+): Promise<void> {
   return uploadToStorage({
     url: upload.uploadUrl,
     headers: upload.uploadHeaders,
@@ -39,19 +45,20 @@ function putToStorage(upload: ImageUpload, blob: Blob, steps: ImageUploadSteps):
 }
 
 // The storage may answer the PUT before the object is visible; one more PUT settles it
-async function completeRetryingPutOnce(
+async function completeRetryingPutOnce<TContentType extends string>(
+  target: UploadTarget<TContentType>,
   upload: ImageUpload,
   blob: Blob,
-  steps: ImageUploadSteps,
-): Promise<UploadedImage> {
+  steps: ImageUploadSteps<TContentType>,
+): Promise<UploadedFile> {
   try {
-    return await completeImageUpload(upload.id);
+    return await target.complete(upload.id);
   } catch (error) {
     const apiError = toApiError(error);
-    if (apiError.kind !== 'http' || apiError.code !== IMAGE_NOT_UPLOADED_CODE) {
+    if (apiError.kind !== 'http' || apiError.code !== target.notUploadedCode) {
       throw error;
     }
   }
   await putToStorage(upload, blob, steps);
-  return completeImageUpload(upload.id);
+  return target.complete(upload.id);
 }

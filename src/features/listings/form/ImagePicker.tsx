@@ -7,10 +7,20 @@ const ACCEPTED_TYPES = 'image/jpeg,image/png,image/webp,image/*';
 interface ImagePickerProps {
   onFiles: (files: File[]) => void;
   disabled?: boolean;
+  /** The input's `accept`; defaults to the photo types a listing takes. */
+  accept?: string;
+  label?: string;
+  dropHint?: string;
 }
 
 /** A labelled file input that also accepts dropped files; the input stays keyboard-focusable. */
-export function ImagePicker({ onFiles, disabled = false }: ImagePickerProps) {
+export function ImagePicker({
+  onFiles,
+  disabled = false,
+  accept = ACCEPTED_TYPES,
+  label = 'Görsel seç',
+  dropHint = 'veya fotoğrafları buraya sürükleyin',
+}: ImagePickerProps) {
   const inputId = useId();
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -46,7 +56,7 @@ export function ImagePicker({ onFiles, disabled = false }: ImagePickerProps) {
       <input
         id={inputId}
         type="file"
-        accept={ACCEPTED_TYPES}
+        accept={accept}
         multiple
         disabled={disabled}
         onChange={handleChange}
@@ -60,9 +70,9 @@ export function ImagePicker({ onFiles, disabled = false }: ImagePickerProps) {
           'peer-disabled:cursor-not-allowed peer-disabled:opacity-60',
         )}
       >
-        Görsel seç
+        {label}
       </label>
-      <p className="text-sm text-muted">veya fotoğrafları buraya sürükleyin</p>
+      <p className="text-sm text-muted">{dropHint}</p>
     </div>
   );
 }
