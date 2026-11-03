@@ -82,7 +82,7 @@ const RATE_LIMIT_MESSAGE = 'Çok fazla deneme yaptınız, lütfen 1 saniye sonra
 const STORAGE_CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'PUT',
-  'Access-Control-Allow-Headers': 'content-type, cache-control',
+  'Access-Control-Allow-Headers': 'content-type, cache-control, content-disposition',
 };
 
 type StorageAnswer = 'ok' | 'forbidden';
@@ -98,6 +98,10 @@ export interface ImageBackendLog {
 }
 
 interface ImageBackendOptions {
+  /** API path of the upload endpoints; comment attachments use the same flow elsewhere. */
+  endpoint?: '/listing-images' | '/comment-attachments';
+  /** Signed headers per declared type; a PDF also gets `content-disposition`. */
+  uploadHeadersFor?: (contentType: string) => Record<string, string>;
   /** Answers for POST /listing-images in call order; 'rateLimited' is a 429 with Retry-After: 1. */
   reserveAnswers?: Array<'ok' | 'rateLimited'>;
   /** Status of every DELETE; the backend answers 404 once the file is already gone. */
@@ -120,8 +124,10 @@ export function mockImageBackend(options: ImageBackendOptions = {}) {
   let parallelPuts = 0;
   let nextImageId = 100;
   let reserveCalls = 0;
+  const endpoint = options.endpoint ?? '/listing-images';
+  const codePrefix = endpoint === '/listing-images' ? 'IMAGE' : 'ATTACHMENT';
   server.use(
-    mockHttp.post(apiUrl('/listing-images'), async ({ request }) => {
+    mockHttp.post(apiUrl(endpoint), async ({ request }) => {
       reserveCalls += 1;
       if (options.reserveAnswers?.[reserveCalls - 1] === 'rateLimited') {
         return HttpResponse.json(buildErrorResponse(429, RATE_LIMIT_MESSAGE), {
@@ -136,7 +142,7 @@ export function mockImageBackend(options: ImageBackendOptions = {}) {
       const upload: ImageUpload = {
         id,
         uploadUrl: `${STORAGE_ORIGIN}/listings/${id}.webp?X-Amz-Signature=secret`,
-        uploadHeaders: UPLOAD_HEADERS,
+        uploadHeaders: options.uploadHeadersFor?.(body.contentType) ?? UPLOAD_HEADERS,
         expiresAt: '2026-10-31T10:00:00Z',
       };
       return HttpResponse.json(upload, { status: 201 });
@@ -164,13 +170,13 @@ export function mockImageBackend(options: ImageBackendOptions = {}) {
             headers: STORAGE_CORS_HEADERS,
           });
     }),
-    mockHttp.post(apiUrl('/listing-images/:id/complete'), ({ params }) => {
+    mockHttp.post(apiUrl(`${endpoint}/:id/complete`), ({ params }) => {
       const id = Number(params.id);
       const answer = options.completeAnswers?.[log.completes.length] ?? 'ok';
       log.completes.push(id);
-      return completeResponse(answer, id);
+      return completeResponse(answer, id, codePrefix);
     }),
-    mockHttp.delete(apiUrl('/listing-images/:id'), ({ params }) => {
+    mockHttp.delete(apiUrl(`${endpoint}/:id`), ({ params }) => {
       log.deletes.push(Number(params.id));
       const status = options.deleteStatus ?? 204;
       return status === 204
@@ -181,16 +187,19 @@ export function mockImageBackend(options: ImageBackendOptions = {}) {
   return { log, releasePuts: putGate.release };
 }
 
-function completeResponse(answer: CompleteAnswer, id: number): Response {
+function completeResponse(answer: CompleteAnswer, id: number, codePrefix: string): Response {
   if (answer === 'invalid') {
     return HttpResponse.json(
-      { ...buildErrorResponse(422, 'Dosya bildirilen türde değil'), code: 'IMAGE_INVALID' },
+      { ...buildErrorResponse(422, 'Dosya bildirilen türde değil'), code: `${codePrefix}_INVALID` },
       { status: 422 },
     );
   }
   if (answer === 'notUploaded') {
     return HttpResponse.json(
-      { ...buildErrorResponse(422, 'Dosya depoda bulunamadı'), code: 'IMAGE_NOT_UPLOADED' },
+      {
+        ...buildErrorResponse(422, 'Dosya depoda bulunamadı'),
+        code: `${codePrefix}_NOT_UPLOADED`,
+      },
       { status: 422 },
     );
   }

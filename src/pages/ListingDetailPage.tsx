@@ -1,4 +1,6 @@
 import { useParams } from 'react-router-dom';
+import { CommentsSection } from '@/features/comments/components/CommentsSection';
+import { CommentWriter } from '@/features/comments/components/CommentWriter';
 import { ApprovalStatusNotice } from '@/features/listings/components/ApprovalStatusNotice';
 import { ListingDetailLayout } from '@/features/listings/components/ListingDetailLayout';
 import { ListingSidePanel } from '@/features/listings/components/ListingSidePanel';
@@ -11,6 +13,8 @@ import { FullPageLoader } from '@/shared/components/FullPageLoader';
 import { StateMessage } from '@/shared/components/StateMessage';
 
 const HTTP_NOT_FOUND = 404;
+// Only these are public, so only these can have published comments
+const COMMENTABLE_STATUSES = new Set(['ACTIVE', 'SOLD']);
 
 export function ListingDetailPage() {
   const listingId = parseListingId(useParams().id);
@@ -49,6 +53,14 @@ export function ListingDetailPage() {
         aside={<ListingSidePanel listing={listing} />}
         className="mt-8 first:mt-0"
       />
+      {COMMENTABLE_STATUSES.has(listing.status) && (
+        <CommentsSection
+          listingId={listing.id}
+          writer={<CommentWriter listing={listing} />}
+          allowReplies
+          className="mt-12 lg:max-w-[calc(100%-24rem)]"
+        />
+      )}
     </div>
   );
 }

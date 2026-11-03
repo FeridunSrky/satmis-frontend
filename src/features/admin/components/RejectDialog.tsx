@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/shared/components/Button';
 import { FormDialog } from '@/shared/components/FormDialog';
@@ -18,6 +18,10 @@ const rejectSchema = z.object({
 interface RejectDialogProps {
   isOpen: boolean;
   title: string;
+  /** Who reads the reason; listing decisions show it to the owner. */
+  description?: string;
+  /** Shows how many characters are left under the field. */
+  showRemaining?: boolean;
   submitLabel: string;
   onCancel: () => void;
   /** Resolves with a field error to show under the reason, or nothing when it is handled. */
@@ -27,18 +31,20 @@ interface RejectDialogProps {
 export function RejectDialog({
   isOpen,
   title,
+  description = 'Gerekçe ilan sahibine aynen gösterilir.',
+  showRemaining = false,
   submitLabel,
   onCancel,
   onSubmit,
 }: RejectDialogProps) {
   return (
-    <FormDialog
-      isOpen={isOpen}
-      title={title}
-      description="Gerekçe ilan sahibine aynen gösterilir."
-      onClose={onCancel}
-    >
-      <RejectForm submitLabel={submitLabel} onCancel={onCancel} onSubmit={onSubmit} />
+    <FormDialog isOpen={isOpen} title={title} description={description} onClose={onCancel}>
+      <RejectForm
+        submitLabel={submitLabel}
+        showRemaining={showRemaining}
+        onCancel={onCancel}
+        onSubmit={onSubmit}
+      />
     </FormDialog>
   );
 }
@@ -46,15 +52,18 @@ export function RejectDialog({
 // Mounted only while the dialog is open, so every opening starts with an empty form
 function RejectForm({
   submitLabel,
+  showRemaining,
   onCancel,
   onSubmit,
-}: Omit<RejectDialogProps, 'isOpen' | 'title'>) {
+}: Omit<RejectDialogProps, 'isOpen' | 'title' | 'description'>) {
   const {
     register,
     handleSubmit,
     setError,
+    control,
     formState: { errors, isSubmitting },
   } = useForm({ resolver: zodResolver(rejectSchema), defaultValues: { reason: '' } });
+  const remaining = MAX_REASON_LENGTH - useWatch({ control, name: 'reason' }).length;
 
   const submit = handleSubmit(async ({ reason }) => {
     const fieldError = await onSubmit(reason);
@@ -68,6 +77,7 @@ function RejectForm({
       <TextAreaField
         label="Gerekçe"
         maxLength={MAX_REASON_LENGTH}
+        hint={showRemaining ? `${remaining} karakter kaldı` : undefined}
         error={errors.reason?.message}
         {...register('reason')}
       />

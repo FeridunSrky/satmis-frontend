@@ -1,5 +1,6 @@
+import type { CommentAttachment } from '@/features/comments/types';
 import type { ListingSummary } from '@/features/listings/types';
-import type { ListingStatus, ReportReason, ReportStatus } from '@/shared/api/enums';
+import type { CommentStatus, ListingStatus, ReportReason, ReportStatus } from '@/shared/api/enums';
 import type { Role } from '@/shared/api/types';
 
 /** A user as the admin list returns it; `enabled: false` means blocked. */
@@ -73,4 +74,40 @@ export interface AdminListingReport {
 export interface PageRequest {
   page: number;
   size: number;
+}
+
+export interface AdminCommentQuery {
+  status: CommentStatus;
+  /** Narrows the queue to one listing, e.g. to take down a published comment. */
+  listingId?: number;
+  page: number;
+  size: number;
+}
+
+/** A comment or an owner's reply as the moderation queue returns it. */
+export interface AdminComment {
+  id: number;
+  /** Sent back with a decision, so a reply arriving meanwhile is not approved unseen. */
+  version: number;
+  listingId: number;
+  listingTitle: string;
+  listingStatus: ListingStatus;
+  author: { id: number; firstName: string; lastName: string; email: string };
+  /** Set when this is a reply: the comment it answers. */
+  parent: { id: number; authorName: string; body: string; status: CommentStatus } | null;
+  body: string;
+  status: CommentStatus;
+  rejectionReason: string | null;
+  attachments: CommentAttachment[];
+  /** ISO-8601 UTC. */
+  createdAt: string;
+  /** ISO-8601 UTC; null until decided. */
+  reviewedAt: string | null;
+}
+
+/** Pending work per admin tab. */
+export interface ModerationCounts {
+  pendingListings: number;
+  pendingComments: number;
+  reportedListings: number;
 }

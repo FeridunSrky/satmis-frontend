@@ -1,5 +1,6 @@
 import { Button } from '@/shared/components/Button';
 import type { ListingImageItem } from '../images/listingImageItems';
+import { UploadStatus } from './UploadStatus';
 
 interface ImageThumbnailProps {
   item: ListingImageItem;
@@ -37,7 +38,11 @@ export function ImageThumbnail({
           </span>
         )}
       </div>
-      <ImageStatus item={item} position={position} />
+      <UploadStatus
+        item={item}
+        progressLabel={`${position}. görsel yükleniyor`}
+        retryLabel={`${position}. görseli tekrar yükle`}
+      />
       <div className="flex flex-wrap gap-1">
         <Button
           variant="ghost"
@@ -78,40 +83,4 @@ export function ImageThumbnail({
       </div>
     </li>
   );
-}
-
-function ImageStatus({ item, position }: { item: ListingImageItem; position: number }) {
-  switch (item.status) {
-    case 'preparing':
-      return <p className="text-xs text-muted">Hazırlanıyor...</p>;
-    case 'uploading':
-      return (
-        <progress
-          max={100}
-          value={Math.round(item.progress * 100)}
-          aria-label={`${position}. görsel yükleniyor`}
-          className="h-2 w-full"
-        />
-      );
-    case 'error':
-      return (
-        <div className="flex flex-col gap-1">
-          <p role="alert" className="text-xs font-medium text-danger">
-            {item.message}
-          </p>
-          {item.retry && (
-            <Button
-              variant="secondary"
-              className="h-8 px-2"
-              onClick={item.retry}
-              aria-label={`${position}. görseli tekrar yükle`}
-            >
-              Tekrar dene
-            </Button>
-          )}
-        </div>
-      );
-    default:
-      return null;
-  }
 }

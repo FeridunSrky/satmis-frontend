@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { HideSaleAction } from '@/features/admin/components/HideSaleAction';
+import { CommentsSection } from '@/features/comments/components/CommentsSection';
 import { useAuthStore } from '@/features/auth/authStore';
 import { ListingDetailLayout } from '@/features/listings/components/ListingDetailLayout';
 import { parseListingId } from '@/features/listings/listingId';
@@ -60,6 +61,8 @@ export function SoldVehicleDetailPage() {
           />
         }
       />
+      {/* Read-only here: no form and no replies, the owner answers on the listing itself */}
+      <CommentsSection listingId={vehicle.id} className="mt-12 lg:max-w-[calc(100%-24rem)]" />
     </PageFrame>
   );
 }

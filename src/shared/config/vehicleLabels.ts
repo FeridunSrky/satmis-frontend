@@ -1,4 +1,5 @@
 import type {
+  CommentStatus,
   CurrencyType,
   FromWho,
   FuelType,
@@ -18,6 +19,12 @@ export const LISTING_STATUS_LABELS: Record<ListingStatus, string> = {
   ACTIVE: 'Yayında',
   PASSIVE: 'Yayında değil',
   SOLD: 'Satıldı',
+  REJECTED: 'Reddedildi',
+};
+
+export const COMMENT_STATUS_LABELS: Record<CommentStatus, string> = {
+  PENDING_APPROVAL: 'Onay bekliyor',
+  APPROVED: 'Yayında',
   REJECTED: 'Reddedildi',
 };
 

@@ -45,6 +45,7 @@ function useInvalidateReports() {
   return (listingId: number) =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: adminKeys.reportQueues() }),
+      queryClient.invalidateQueries({ queryKey: adminKeys.moderationCounts() }),
       queryClient.invalidateQueries({ queryKey: adminKeys.listingReportsAll(listingId) }),
     ]);
 }

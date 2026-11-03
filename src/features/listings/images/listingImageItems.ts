@@ -1,12 +1,33 @@
+/** What a picked file was, for previews that are not images (a PDF's name and size). */
+export interface PickedFile {
+  name: string;
+  type: string;
+  size: number;
+}
+
 export type ListingImageItem =
   /** Already attached to the listing being edited. */
   | { key: string; status: 'existing'; id: number; url: string }
-  | { key: string; status: 'preparing' | 'uploading'; previewUrl: string; progress: number }
-  | { key: string; status: 'uploaded'; id: number; url: string; previewUrl: string }
+  | {
+      key: string;
+      status: 'preparing' | 'uploading';
+      previewUrl: string;
+      file: PickedFile;
+      progress: number;
+    }
+  | {
+      key: string;
+      status: 'uploaded';
+      id: number;
+      url: string;
+      previewUrl: string;
+      file: PickedFile;
+    }
   | {
       key: string;
       status: 'error';
       previewUrl: string;
+      file: PickedFile;
       message: string;
       /** Absent when trying again cannot help, e.g. the file is not a valid image. */
       retry?: () => void;
@@ -19,6 +40,7 @@ export type ListingImageAction =
   | { type: 'uploaded'; key: string; id: number; url: string }
   | { type: 'failed'; key: string; message: string; retry?: () => void }
   | { type: 'removed'; key: string }
+  | { type: 'cleared' }
   | { type: 'moved'; key: string; toIndex: number };
 
 function hasPreview(
@@ -37,6 +59,8 @@ export function listingImagesReducer(
       return [...items, ...action.items];
     case 'removed':
       return items.filter((item) => item.key !== action.key);
+    case 'cleared':
+      return [];
     case 'moved':
       return moveItem(items, action.key, action.toIndex);
     default:
@@ -48,18 +72,25 @@ export function listingImagesReducer(
 
 function applyToItem(
   item: Exclude<ListingImageItem, { status: 'existing' }>,
-  action: Exclude<ListingImageAction, { type: 'added' | 'removed' | 'moved' }>,
+  action: Exclude<ListingImageAction, { type: 'added' | 'removed' | 'cleared' | 'moved' }>,
 ): ListingImageItem {
-  const { key, previewUrl } = item;
+  const { key, previewUrl, file } = item;
   switch (action.type) {
     case 'started':
-      return { key, previewUrl, status: action.status, progress: 0 };
+      return { key, previewUrl, file, status: action.status, progress: 0 };
     case 'progressed':
       return item.status === 'uploading' ? { ...item, progress: action.progress } : item;
     case 'uploaded':
-      return { key, previewUrl, status: 'uploaded', id: action.id, url: action.url };
+      return { key, previewUrl, file, status: 'uploaded', id: action.id, url: action.url };
     case 'failed':
-      return { key, previewUrl, status: 'error', message: action.message, retry: action.retry };
+      return {
+        key,
+        previewUrl,
+        file,
+        status: 'error',
+        message: action.message,
+        retry: action.retry,
+      };
   }
 }
 

@@ -31,6 +31,7 @@ export const REPORT_REASONS = [
   'OTHER',
 ] as const;
 export const REPORT_STATUSES = ['OPEN', 'DISMISSED', 'ACTION_TAKEN'] as const;
+export const COMMENT_STATUSES = ['PENDING_APPROVAL', 'APPROVED', 'REJECTED'] as const;
 export const LISTING_SORTS = [
   'NEWEST',
   'OLDEST',
@@ -52,6 +53,7 @@ export type VehicleCondition = (typeof VEHICLE_CONDITIONS)[number];
 export type FromWho = (typeof FROM_WHO_VALUES)[number];
 export type ReportReason = (typeof REPORT_REASONS)[number];
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
+export type CommentStatus = (typeof COMMENT_STATUSES)[number];
 export type ListingSort = (typeof LISTING_SORTS)[number];
 /**
  * Same values as ListingSort, so the search URL parsing is shared; on the sold vehicles page
