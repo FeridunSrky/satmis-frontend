@@ -8,8 +8,7 @@ import type { MyComment } from '../types';
 
 const DELETE_CONFIRM: ConfirmCopy = {
   title: 'Yorum silinsin mi?',
-  description:
-    'Yorum silinecek. Yorum hakkınız geri gelmez. Yorumun altındaki cevap da silinir.',
+  description: 'Yorum silinecek. Yorum hakkınız geri gelmez. Yorumun altındaki cevap da silinir.',
   confirmLabel: 'Sil',
   tone: 'danger',
 };

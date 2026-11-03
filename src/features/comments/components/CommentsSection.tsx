@@ -34,11 +34,7 @@ export function CommentsSection({
         <p className="mt-2 text-sm text-muted">{COMMENTS_INTRO}</p>
       </div>
       {writer}
-      <CommentListBody
-        query={commentsQuery}
-        listingId={listingId}
-        allowReplies={allowReplies}
-      />
+      <CommentListBody query={commentsQuery} listingId={listingId} allowReplies={allowReplies} />
     </section>
   );
 }

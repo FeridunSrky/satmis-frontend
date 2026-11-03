@@ -11,10 +11,9 @@ export async function getListingComments(
   listingId: number,
   query: PageRequest,
 ): Promise<PageResponse<ListingComment>> {
-  const response = await http.get<PageResponse<ListingComment>>(
-    `/listings/${listingId}/comments`,
-    { params: query },
-  );
+  const response = await http.get<PageResponse<ListingComment>>(`/listings/${listingId}/comments`, {
+    params: query,
+  });
   return response.data;
 }
 

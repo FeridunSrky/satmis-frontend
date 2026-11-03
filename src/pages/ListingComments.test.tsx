@@ -180,7 +180,9 @@ describe('listing comments: writing', () => {
 
     expect(await screen.findByText('ekspertiz.pdf')).toBeInTheDocument();
     await waitFor(() => expect(log.completes).toEqual([101]));
-    expect(log.reservations).toEqual([{ id: 101, contentType: 'application/pdf', sizeBytes: 1234 }]);
+    expect(log.reservations).toEqual([
+      { id: 101, contentType: 'application/pdf', sizeBytes: 1234 },
+    ]);
     const [put] = log.puts;
     expect(put?.size).toBe(1234);
     expect(put?.headers.get('content-disposition')).toBe('attachment');
@@ -209,9 +211,7 @@ describe('listing comments: writing', () => {
     await user.click(screen.getByRole('button', { name: 'Gönder' }));
     await confirmDialog(user, 'Gönder');
 
-    expect(
-      await screen.findByText('Bu ilana en fazla 2 yorum yazabilirsiniz'),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Bu ilana en fazla 2 yorum yazabilirsiniz')).toBeInTheDocument();
     expect(screen.queryByLabelText('Yorumunuz')).not.toBeInTheDocument();
   });
 

@@ -29,10 +29,7 @@ export function CommentQuotaGate({ listingId, children }: CommentQuotaGateProps)
   const { remainingComments, maxComments } = quotaQuery.data;
   if (remainingComments <= 0) {
     return (
-      <Notice
-        tone="danger"
-        title={`Bu ilana yorum hakkınız doldu (en fazla ${maxComments})`}
-      />
+      <Notice tone="danger" title={`Bu ilana yorum hakkınız doldu (en fazla ${maxComments})`} />
     );
   }
   return (
